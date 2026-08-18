@@ -85,9 +85,13 @@ cmake --build build
 
 ## 📸 Aperçu
 
-![Écran d'accueil](docs/screenshots/home.png)
-![Chat coach IA](docs/screenshots/coach-chat.png)
-![Séance active](docs/screenshots/workout-session.png)
+<table>
+  <tr>
+    <td width="33%"><img src="docs/screenshots/home.png" alt="Écran d'accueil"></td>
+    <td width="33%"><img src="docs/screenshots/coach-chat.png" alt="Chat coach IA"></td>
+    <td width="33%"><img src="docs/screenshots/workout-session.png" alt="Séance active"></td>
+  </tr>
+</table>
 
 
 ## 📝 Roadmap
