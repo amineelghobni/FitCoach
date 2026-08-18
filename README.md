@@ -85,7 +85,10 @@ cmake --build build
 
 ## 📸 Aperçu
 
-*(à compléter avec quelques captures d'écran de l'application)*
+![Écran d'accueil](docs/screenshots/home.png)
+![Chat coach IA](docs/screenshots/coach-chat.png)
+![Séance active](docs/screenshots/workout-session.png)
+
 
 ## 📝 Roadmap
 
