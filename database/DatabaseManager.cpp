@@ -155,6 +155,7 @@ void DatabaseManager::createTables()
     )");
 
     execQuery("ALTER TABLE workouts ADD COLUMN calories_brulees INTEGER DEFAULT 0");
+    execQuery("ALTER TABLE workout_exercises ADD COLUMN categorie TEXT");
     seedExercisesLibrary();
 }
 

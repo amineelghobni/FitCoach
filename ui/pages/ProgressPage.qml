@@ -383,7 +383,7 @@ Item {
                     Item { Layout.fillWidth: true }
 
                     Text {
-                        text: "30 derniers jours"
+                        text: "7 derniers jours"
                         color: theme.textHint
                         font.pixelSize: 10
                         anchors.verticalCenter: parent.verticalCenter
@@ -391,6 +391,7 @@ Item {
                 }
 
                 Rectangle {
+                    id: repartCard
                     Layout.fillWidth: true
                     Layout.leftMargin: 16
                     Layout.rightMargin: 16
@@ -401,7 +402,21 @@ Item {
                     border.color: theme.border
                     border.width: 1
 
-                    property var repartData: progressVM.repartitionMusculaire
+                    property var repartData: []
+
+                    Component.onCompleted: {
+                        repartData = progressVM.repartitionMusculaire
+                    }
+
+                    Connections {
+                        target: progressVM
+                        function onDataChanged() {
+                            repartCard.repartData = progressVM.repartitionMusculaire
+                            donutChart.animProgress = 0
+                            donutChart.requestPaint()
+                        }
+                    }
+
                     property real totalVolume: {
                         var t = 0
                         for (var i = 0; i < repartData.length; i++) t += repartData[i].volume
@@ -412,7 +427,7 @@ Item {
                         anchors.fill: parent
                         anchors.margins: 16
                         spacing: 20
-                        visible: parent.totalVolume > 0
+                        visible: repartCard.totalVolume > 0
 
                         // ── Donut chart ──
                         Canvas {
@@ -432,20 +447,12 @@ Item {
 
                             onAnimProgressChanged: requestPaint()
 
-                            Connections {
-                                target: progressVM
-                                function onDataChanged() {
-                                    donutChart.animProgress = 0
-                                    donutChart.requestPaint()
-                                }
-                            }
-
                             onPaint: {
                                 var ctx = getContext("2d")
                                 ctx.clearRect(0, 0, width, height)
 
-                                var data = parent.parent.repartData
-                                var total = parent.parent.totalVolume
+                                var data = repartCard.repartData
+                                var total = repartCard.totalVolume
                                 if (total <= 0) return
 
                                 var cx = width / 2
@@ -480,7 +487,7 @@ Item {
                             width: parent.width - 130 - 20
 
                             Repeater {
-                                model: parent.parent.parent.repartData
+                                model: repartCard.repartData
 
                                 Row {
                                     width: parent.width
@@ -517,7 +524,7 @@ Item {
                         color: theme.textHint
                         font.pixelSize: theme.fontSM
                         anchors.centerIn: parent
-                        visible: parent.totalVolume === 0
+                        visible: repartCard.totalVolume === 0
                         wrapMode: Text.WordWrap
                         width: parent.width - 32
                         horizontalAlignment: Text.AlignHCenter
@@ -634,14 +641,6 @@ Item {
                             }
                         }
 
-                        Connections {
-                            target: progressVM
-                            function onDataChanged() {
-                                caloriesChart.chartData = progressVM.caloriesWeek
-                                caloriesChart.animProgress = 0
-                                caloriesChart.requestPaint()
-                            }
-                        }
                     }
 
                     Text {

@@ -638,11 +638,13 @@ Item {
                                     var wid = workoutId
                                     var exVM = exerciseVM
                                     var progVM = programmeVM
+                                    var pVM = progressVM
                                     progVM.terminerSeance(wid, 45)
                                     exVM.setDernieresCalories(exVM.calculerCaloriesBrulees(wid))
                                     Qt.callLater(function() {
                                         exVM.selectWorkout(-1)
                                         exVM.refresh()
+                                        pVM.refresh()
                                         exVM.setSeanceTerminee(true)
                                     })
                                 }
@@ -780,6 +782,7 @@ Item {
                                 anchors.fill: parent
                                 onClicked: {
                                     exerciseVM.supprimerWorkout(workoutToDelete)
+                                    progressVM.refresh()
                                     showDeleteConfirm = false
                                     workoutToDelete = -1
                                     workoutToDeleteName = ""
@@ -1015,6 +1018,7 @@ Item {
                                         addExercicePopup.mReps,
                                         addExercicePopup.mPoids
                                     )
+                                    progressVM.refresh()
                                     fieldExNom.text  = ""
                                     fieldSets.text   = ""
                                     fieldReps.text   = ""
@@ -1259,6 +1263,7 @@ Item {
                                 anchors.fill: parent
                                 onClicked: {
                                     exerciseVM.supprimerExercice(exerciceToDelete)
+                                    progressVM.refresh()
                                     showDeleteExercice = false
                                     exerciceToDelete = -1
                                 }

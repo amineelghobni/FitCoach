@@ -159,12 +159,30 @@ void ExerciseViewModel::ajouterWorkout(const QString& nom)
 void ExerciseViewModel::ajouterExercice(int workoutId, const QString& nom,
                                         int sets, int reps, double poids)
 {
-    DatabaseManager::instance().execQuery(
-        "INSERT INTO workout_exercises (workout_id, nom, sets, reps, poids) "
-        "VALUES (?, ?, ?, ?, ?)",
-        { workoutId, nom, sets, reps, poids }
+    auto qCat = DatabaseManager::instance().execQuery(
+        "SELECT categorie "
+        "FROM exercises_library "
+        "WHERE LOWER(nom) = LOWER(?) "
+        "LIMIT 1",
+        { nom }
         );
+
+    QString categorie = "";
+
+    if (qCat.next())
+        categorie = qCat.value(0).toString();
+
+    qDebug() << "CAT =" << categorie << "NOM =" << nom;
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_exercises "
+        "(workout_id, nom, categorie, sets, reps, poids) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        { workoutId, nom, categorie, sets, reps, poids }
+        );
+
     m_exercises->loadFromDb(workoutId);
+    emit currentWorkoutChanged();
 }
 
 void ExerciseViewModel::toggleFait(int exerciceId)
@@ -193,6 +211,7 @@ void ExerciseViewModel::supprimerWorkout(int workoutId)
         m_exercises->clear();
         emit currentWorkoutChanged();
     }
+    emit currentWorkoutChanged();
 }
 
 void ExerciseViewModel::selectWorkout(int workoutId)
@@ -256,6 +275,7 @@ void ExerciseViewModel::modifierExercice(int exerciceId, const QString& nom,
         );
     if (m_currentWorkoutId != -1)
         m_exercises->loadFromDb(m_currentWorkoutId);
+    emit currentWorkoutChanged();
 }
 
 void ExerciseViewModel::supprimerExercice(int exerciceId)
@@ -265,6 +285,7 @@ void ExerciseViewModel::supprimerExercice(int exerciceId)
         );
     if (m_currentWorkoutId != -1)
         m_exercises->loadFromDb(m_currentWorkoutId);
+    emit currentWorkoutChanged();
 }
 
 bool ExerciseViewModel::seanceTerminee() const { return m_seanceTerminee; }
@@ -344,7 +365,19 @@ bool ExerciseViewModel::verifierEtSauvegarderPR(int workoutId,
                                                 int reps, double poids)
 {
     // Volume de cette série
-    double volumeSerie = reps * poids;
+    auto qSets = DatabaseManager::instance().execQuery(
+        "SELECT sets FROM workout_exercises "
+        "WHERE workout_id = ? AND nom = ? "
+        "ORDER BY id DESC LIMIT 1",
+        { workoutId, nom }
+        );
+
+    int sets = 1;
+
+    if (qSets.next())
+        sets = qSets.value(0).toInt();
+
+    double volumeSerie = sets * reps * poids;
 
     // Récupère le meilleur PR existant pour cet exercice
     auto q = DatabaseManager::instance().execQuery(

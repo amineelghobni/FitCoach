@@ -125,11 +125,10 @@ QVariantList ProgressViewModel::topPRs() const {
 }
 QVariantList ProgressViewModel::repartitionMusculaire() const
 {
-
     QVariantList result;
 
     QStringList categories = {"Push", "Pull", "Legs", "Core"};
-    QStringList emojis     = {"💪",   "🔄",   "🦵",   "🎯"};
+    QStringList emojis     = {"💪", "🔄", "🦵", "🎯"};
     QStringList colors     = {"#00D4AA", "#4FACFE", "#FF6B6B", "#FFD700"};
 
     QMap<QString, double> volumeParCategorie;
@@ -137,57 +136,39 @@ QVariantList ProgressViewModel::repartitionMusculaire() const
         volumeParCategorie[cat] = 0;
 
     auto q = DatabaseManager::instance().execQuery(
-        "SELECT "
-        "CASE "
-        "WHEN LOWER(nom) LIKE '%développé%' THEN 'Push' "
-        "WHEN LOWER(nom) LIKE '%ecarte%' THEN 'Push' "
-        "WHEN LOWER(nom) LIKE '%écarté%' THEN 'Push' "
-        "WHEN LOWER(nom) LIKE '%extension%' THEN 'Push' "
-
-        "WHEN LOWER(nom) LIKE '%curl%' THEN 'Pull' "
-        "WHEN LOWER(nom) LIKE '%rowing%' THEN 'Pull' "
-        "WHEN LOWER(nom) LIKE '%traction%' THEN 'Pull' "
-        "WHEN LOWER(nom) LIKE '%tirage%' THEN 'Pull' "
-
-        "WHEN LOWER(nom) LIKE '%squat%' THEN 'Legs' "
-        "WHEN LOWER(nom) LIKE '%fente%' THEN 'Legs' "
-        "WHEN LOWER(nom) LIKE '%leg%' THEN 'Legs' "
-        "WHEN LOWER(nom) LIKE '%mollet%' THEN 'Legs' "
-
-        "WHEN LOWER(nom) LIKE '%gainage%' THEN 'Core' "
-        "WHEN LOWER(nom) LIKE '%abdos%' THEN 'Core' "
-        "WHEN LOWER(nom) LIKE '%crunch%' THEN 'Core' "
-
-        "ELSE 'Core' "
-        "END AS categorie, "
-        "SUM(sets * reps * poids) AS volume "
-        "FROM workout_exercises "
-        "GROUP BY categorie"
+        "SELECT we.categorie, "
+        "SUM(we.sets * we.reps * we.poids) "
+        "FROM workout_exercises we "
+        "JOIN workouts w ON w.id = we.workout_id "
+        "WHERE we.categorie IS NOT NULL "
+        "AND we.categorie != '' "
+        "AND w.date >= date('now', '-6 days') "
+        "GROUP BY we.categorie"
         );
 
     while (q.next()) {
-
         QString cat = q.value(0).toString();
         double vol = q.value(1).toDouble();
+
+        qDebug() << "CAT =" << cat << "VOL =" << vol;
 
         if (volumeParCategorie.contains(cat))
             volumeParCategorie[cat] = vol;
     }
 
     double total = 0;
-
     for (const QString& cat : categories)
         total += volumeParCategorie[cat];
 
+    qDebug() << "TOTAL =" << total;
+
     for (int i = 0; i < categories.size(); i++) {
-
         QVariantMap item;
-
         item["categorie"] = categories[i];
-        item["emoji"]     = emojis[i];
-        item["color"]     = colors[i];
-        item["volume"]    = volumeParCategorie[categories[i]];
-        item["pct"]       = total > 0
+        item["emoji"] = emojis[i];
+        item["color"] = colors[i];
+        item["volume"] = volumeParCategorie[categories[i]];
+        item["pct"] = total > 0
                           ? qRound(volumeParCategorie[categories[i]] * 100.0 / total)
                           : 0;
 
@@ -196,6 +177,7 @@ QVariantList ProgressViewModel::repartitionMusculaire() const
 
     return result;
 }
+
 
 
 void ProgressViewModel::ajouterPoids(double poids) {
