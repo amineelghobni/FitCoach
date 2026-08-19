@@ -395,26 +395,102 @@ Item {
                     Layout.leftMargin: 16
                     Layout.rightMargin: 16
                     Layout.bottomMargin: 16
-                    height: 160
+                    height: 200
                     radius: theme.radiusLG
                     color: theme.bgCard
                     border.color: theme.border
                     border.width: 1
 
-                    Column {
+                    property var repartData: progressVM.repartitionMusculaire
+                    property real totalVolume: {
+                        var t = 0
+                        for (var i = 0; i < repartData.length; i++) t += repartData[i].volume
+                        return t
+                    }
+
+                    Row {
                         anchors.fill: parent
                         anchors.margins: 16
-                        spacing: 12
+                        spacing: 20
+                        visible: parent.totalVolume > 0
 
-                        Repeater {
-                            model: progressVM.repartitionMusculaire
+                        // ── Donut chart ──
+                        Canvas {
+                            id: donutChart
+                            width: 130
+                            height: 130
+                            anchors.verticalCenter: parent.verticalCenter
 
-                            Column {
-                                width: parent.width
-                                spacing: 4
+                            property real animProgress: 0
+
+                            NumberAnimation on animProgress {
+                                from: 0; to: 1
+                                duration: 900
+                                easing.type: Easing.OutCubic
+                                running: true
+                            }
+
+                            onAnimProgressChanged: requestPaint()
+
+                            Connections {
+                                target: progressVM
+                                function onDataChanged() {
+                                    donutChart.animProgress = 0
+                                    donutChart.requestPaint()
+                                }
+                            }
+
+                            onPaint: {
+                                var ctx = getContext("2d")
+                                ctx.clearRect(0, 0, width, height)
+
+                                var data = parent.parent.repartData
+                                var total = parent.parent.totalVolume
+                                if (total <= 0) return
+
+                                var cx = width / 2
+                                var cy = height / 2
+                                var radius = Math.min(width, height) / 2 - 4
+                                var innerRadius = radius * 0.6
+
+                                var startAngle = -Math.PI / 2
+
+                                for (var i = 0; i < data.length; i++) {
+                                    if (data[i].volume <= 0) continue
+                                    var sweep = (data[i].volume / total) * Math.PI * 2 * animProgress
+
+                                    ctx.beginPath()
+                                    ctx.moveTo(cx + Math.cos(startAngle) * innerRadius,
+                                               cy + Math.sin(startAngle) * innerRadius)
+                                    ctx.arc(cx, cy, radius, startAngle, startAngle + sweep, false)
+                                    ctx.arc(cx, cy, innerRadius, startAngle + sweep, startAngle, true)
+                                    ctx.closePath()
+                                    ctx.fillStyle = data[i].color
+                                    ctx.fill()
+
+                                    startAngle += sweep
+                                }
+                            }
+                        }
+
+                        // ── Légende ──
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: 10
+                            width: parent.width - 130 - 20
+
+                            Repeater {
+                                model: parent.parent.parent.repartData
 
                                 Row {
                                     width: parent.width
+                                    spacing: 8
+
+                                    Rectangle {
+                                        width: 10; height: 10; radius: 5
+                                        color: modelData.color
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
 
                                     Text {
                                         text: modelData.emoji + " " + modelData.categorie
@@ -422,39 +498,29 @@ Item {
                                         font.pixelSize: 12
                                         font.bold: true
                                         anchors.verticalCenter: parent.verticalCenter
+                                        width: 90
                                     }
-
-                                    Item { Layout.fillWidth: true }
 
                                     Text {
-                                        text: modelData.count + " séance" +
-                                              (modelData.count > 1 ? "s" : "") +
-                                              "  " + modelData.pct + "%"
+                                        text: modelData.pct + "%"
                                         color: theme.textHint
-                                        font.pixelSize: 11
+                                        font.pixelSize: 12
                                         anchors.verticalCenter: parent.verticalCenter
-                                    }
-                                }
-
-                                Rectangle {
-                                    width: parent.width
-                                    height: 6
-                                    radius: 3
-                                    color: "#1e2a3a"
-
-                                    Rectangle {
-                                        width: parent.width * (modelData.pct / 100)
-                                        height: parent.height
-                                        radius: 3
-                                        color: modelData.color
-
-                                        Behavior on width {
-                                            NumberAnimation { duration: 600; easing.type: Easing.OutCubic }
-                                        }
                                     }
                                 }
                             }
                         }
+                    }
+
+                    Text {
+                        text: "Fais des séances pour voir ta répartition 🎯"
+                        color: theme.textHint
+                        font.pixelSize: theme.fontSM
+                        anchors.centerIn: parent
+                        visible: parent.totalVolume === 0
+                        wrapMode: Text.WordWrap
+                        width: parent.width - 32
+                        horizontalAlignment: Text.AlignHCenter
                     }
                 }
 

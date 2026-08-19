@@ -584,6 +584,7 @@ Item {
                                         exVM.selectWorkout(-1)
                                         exVM.refresh()
                                         homeVM.refresh()
+                                        progressVM.refresh()
                                         exVM.setSeanceTerminee(true)
                                         fermer()
                                     }

@@ -1,6 +1,7 @@
 #include "ProgressViewModel.h"
 #include "../database/DatabaseManager.h"
 #include <QDate>
+#include <QMap>
 
 ProgressViewModel::ProgressViewModel(QObject* parent)
     : QObject(parent) {}
@@ -122,45 +123,80 @@ QVariantList ProgressViewModel::topPRs() const {
     }
     return result;
 }
+QVariantList ProgressViewModel::repartitionMusculaire() const
+{
 
-QVariantList ProgressViewModel::repartitionMusculaire() const {
     QVariantList result;
 
-    // Compte les séances par catégorie sur les 30 derniers jours
     QStringList categories = {"Push", "Pull", "Legs", "Core"};
-    QStringList emojis     = {"💪",   "🔄",   "🦵",   "🎯"  };
+    QStringList emojis     = {"💪",   "🔄",   "🦵",   "🎯"};
     QStringList colors     = {"#00D4AA", "#4FACFE", "#FF6B6B", "#FFD700"};
 
-    int total = 0;
-    QList<int> counts;
+    QMap<QString, double> volumeParCategorie;
+    for (const QString& cat : categories)
+        volumeParCategorie[cat] = 0;
 
-    for (const QString& cat : categories) {
-        auto q = DatabaseManager::instance().execQuery(
-            "SELECT COUNT(*) FROM workouts w "
-            "WHERE w.date >= date('now', '-30 days') "
-            "AND LOWER(w.nom) LIKE ?",
-            { "%" + cat.toLower() + "%" }
-            );
-        int count = 0;
-        if (q.next()) count = q.value(0).toInt();
-        counts.append(count);
-        total += count;
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT "
+        "CASE "
+        "WHEN LOWER(nom) LIKE '%développé%' THEN 'Push' "
+        "WHEN LOWER(nom) LIKE '%ecarte%' THEN 'Push' "
+        "WHEN LOWER(nom) LIKE '%écarté%' THEN 'Push' "
+        "WHEN LOWER(nom) LIKE '%extension%' THEN 'Push' "
+
+        "WHEN LOWER(nom) LIKE '%curl%' THEN 'Pull' "
+        "WHEN LOWER(nom) LIKE '%rowing%' THEN 'Pull' "
+        "WHEN LOWER(nom) LIKE '%traction%' THEN 'Pull' "
+        "WHEN LOWER(nom) LIKE '%tirage%' THEN 'Pull' "
+
+        "WHEN LOWER(nom) LIKE '%squat%' THEN 'Legs' "
+        "WHEN LOWER(nom) LIKE '%fente%' THEN 'Legs' "
+        "WHEN LOWER(nom) LIKE '%leg%' THEN 'Legs' "
+        "WHEN LOWER(nom) LIKE '%mollet%' THEN 'Legs' "
+
+        "WHEN LOWER(nom) LIKE '%gainage%' THEN 'Core' "
+        "WHEN LOWER(nom) LIKE '%abdos%' THEN 'Core' "
+        "WHEN LOWER(nom) LIKE '%crunch%' THEN 'Core' "
+
+        "ELSE 'Core' "
+        "END AS categorie, "
+        "SUM(sets * reps * poids) AS volume "
+        "FROM workout_exercises "
+        "GROUP BY categorie"
+        );
+
+    while (q.next()) {
+
+        QString cat = q.value(0).toString();
+        double vol = q.value(1).toDouble();
+
+        if (volumeParCategorie.contains(cat))
+            volumeParCategorie[cat] = vol;
     }
 
+    double total = 0;
+
+    for (const QString& cat : categories)
+        total += volumeParCategorie[cat];
+
     for (int i = 0; i < categories.size(); i++) {
+
         QVariantMap item;
+
         item["categorie"] = categories[i];
         item["emoji"]     = emojis[i];
         item["color"]     = colors[i];
-        item["count"]     = counts[i];
+        item["volume"]    = volumeParCategorie[categories[i]];
         item["pct"]       = total > 0
-                          ? qRound(counts[i] * 100.0 / total)
+                          ? qRound(volumeParCategorie[categories[i]] * 100.0 / total)
                           : 0;
+
         result.append(item);
     }
 
     return result;
 }
+
 
 void ProgressViewModel::ajouterPoids(double poids) {
     DatabaseManager::instance().execQuery(
