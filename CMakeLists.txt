@@ -79,3 +79,23 @@ install(TARGETS appFitCoach
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
+# ── Tests ──────────────────────────────────────────────────
+enable_testing()
+find_package(Qt6 REQUIRED COMPONENTS Test)
+
+qt_add_executable(tst_exerciseviewmodel
+    tests/tst_exerciseviewmodel.cpp
+    viewmodels/ExerciseViewModel.cpp
+    viewmodels/ExerciseViewModel.h
+    database/DatabaseManager.cpp
+    database/DatabaseManager.h
+)
+
+target_link_libraries(tst_exerciseviewmodel
+    PRIVATE
+        Qt6::Test
+        Qt6::Sql
+        Qt6::Quick
+)
+
+add_test(NAME tst_exerciseviewmodel COMMAND tst_exerciseviewmodel)
