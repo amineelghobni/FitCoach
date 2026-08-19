@@ -123,6 +123,29 @@ QVariantList ProgressViewModel::topPRs() const {
     }
     return result;
 }
+QVariantList ProgressViewModel::badges() const
+{
+    QVariantList result;
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT code, nom, description, date_obtention "
+        "FROM badges "
+        "ORDER BY date_obtention DESC"
+        );
+
+    while (q.next()) {
+        QVariantMap badge;
+
+        badge["code"] = q.value(0).toString();
+        badge["nom"] = q.value(1).toString();
+        badge["description"] = q.value(2).toString();
+        badge["date"] = q.value(3).toString();
+
+        result.append(badge);
+    }
+
+    return result;
+}
 QVariantList ProgressViewModel::repartitionMusculaire() const
 {
     QVariantList result;

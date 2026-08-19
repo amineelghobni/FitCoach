@@ -363,6 +363,94 @@ Item {
                         }
                     }
                 }
+                // ── Badges ────────────────────────────────
+                Row {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
+                    Layout.bottomMargin: 8
+
+                    Text {
+                        text: "🥇 BADGES"
+                        color: theme.textHint
+                        font.pixelSize: 10
+                        font.bold: true
+                        font.letterSpacing: 1
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.leftMargin: 16
+                    Layout.rightMargin: 16
+                    Layout.bottomMargin: 16
+
+                    height: progressVM.badges.length > 0
+                            ? progressVM.badges.length * 58 + 16
+                            : 70
+
+                    radius: theme.radiusLG
+                    color: theme.bgCard
+                    border.color: theme.border
+                    border.width: 1
+
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 8
+
+                        Repeater {
+                            model: progressVM.badges
+
+                            Rectangle {
+                                width: parent.width
+                                height: 50
+                                radius: theme.radiusSM
+                                color: "#FFD70010"
+                                border.color: "#FFD70033"
+                                border.width: 1
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.margins: 10
+                                    spacing: 10
+
+                                    Text {
+                                        text: "🏆"
+                                        font.pixelSize: 22
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        spacing: 2
+
+                                        Text {
+                                            text: modelData.nom
+                                            color: theme.textPrimary
+                                            font.pixelSize: 12
+                                            font.bold: true
+                                        }
+
+                                        Text {
+                                            text: modelData.description
+                                            color: theme.textHint
+                                            font.pixelSize: 10
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Text {
+                            visible: progressVM.badges.length === 0
+                            text: "Aucun badge débloqué pour le moment 🥇"
+                            color: theme.textHint
+                            font.pixelSize: theme.fontSM
+                            anchors.horizontalCenter: parent.horizontalCenter
+                        }
+                    }
+                }
 
                 // ── Répartition musculaire ────────
                 Row {

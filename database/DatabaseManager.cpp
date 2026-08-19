@@ -119,7 +119,7 @@ void DatabaseManager::createTables()
     )
     )");
 
-        execQuery(R"(
+    execQuery(R"(
         CREATE TABLE IF NOT EXISTS programme_suggere (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
             nom         TEXT,
@@ -130,7 +130,7 @@ void DatabaseManager::createTables()
         )
     )");
 
-        execQuery(R"(
+    execQuery(R"(
         CREATE TABLE IF NOT EXISTS programme_exercices (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
             programme_id    INTEGER REFERENCES programme_suggere(id),
@@ -142,7 +142,7 @@ void DatabaseManager::createTables()
         )
     )");
 
-        execQuery(R"(
+    execQuery(R"(
     CREATE TABLE IF NOT EXISTS personal_records (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         exercice_nom TEXT    NOT NULL,
@@ -151,6 +151,16 @@ void DatabaseManager::createTables()
         volume       REAL    DEFAULT 0,
         date         TEXT    DEFAULT (date('now')),
         workout_id   INTEGER REFERENCES workouts(id)
+    )
+    )");
+
+    execQuery(R"(
+    CREATE TABLE IF NOT EXISTS badges (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE,
+        nom TEXT,
+        description TEXT,
+        date_obtention TEXT DEFAULT (date('now'))
     )
     )");
 
