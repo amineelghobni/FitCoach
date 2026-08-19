@@ -13,11 +13,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: List available Qt versions
+        run: |
+          pip install aqtinstall
+          python -m aqt list-qt windows desktop
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.11.0'
+          version: '6.9.1'
           arch: 'win64_msvc2022_64'
           modules: 'qtquickcontrols2'
           cache: true
