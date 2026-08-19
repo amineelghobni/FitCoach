@@ -1,6 +1,7 @@
 #include "ProgressViewModel.h"
 #include "../database/DatabaseManager.h"
 #include <QDate>
+#include <QMap>
 
 ProgressViewModel::ProgressViewModel(QObject* parent)
     : QObject(parent) {}
@@ -122,45 +123,85 @@ QVariantList ProgressViewModel::topPRs() const {
     }
     return result;
 }
-
-QVariantList ProgressViewModel::repartitionMusculaire() const {
+QVariantList ProgressViewModel::badges() const
+{
     QVariantList result;
 
-    // Compte les séances par catégorie sur les 30 derniers jours
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT code, nom, description, date_obtention "
+        "FROM badges "
+        "ORDER BY date_obtention DESC"
+        );
+
+    while (q.next()) {
+        QVariantMap badge;
+
+        badge["code"] = q.value(0).toString();
+        badge["nom"] = q.value(1).toString();
+        badge["description"] = q.value(2).toString();
+        badge["date"] = q.value(3).toString();
+
+        result.append(badge);
+    }
+
+    return result;
+}
+QVariantList ProgressViewModel::repartitionMusculaire() const
+{
+    QVariantList result;
+
     QStringList categories = {"Push", "Pull", "Legs", "Core"};
-    QStringList emojis     = {"💪",   "🔄",   "🦵",   "🎯"  };
+    QStringList emojis     = {"💪", "🔄", "🦵", "🎯"};
     QStringList colors     = {"#00D4AA", "#4FACFE", "#FF6B6B", "#FFD700"};
 
-    int total = 0;
-    QList<int> counts;
+    QMap<QString, double> volumeParCategorie;
+    for (const QString& cat : categories)
+        volumeParCategorie[cat] = 0;
 
-    for (const QString& cat : categories) {
-        auto q = DatabaseManager::instance().execQuery(
-            "SELECT COUNT(*) FROM workouts w "
-            "WHERE w.date >= date('now', '-30 days') "
-            "AND LOWER(w.nom) LIKE ?",
-            { "%" + cat.toLower() + "%" }
-            );
-        int count = 0;
-        if (q.next()) count = q.value(0).toInt();
-        counts.append(count);
-        total += count;
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT we.categorie, "
+        "SUM(we.sets * we.reps * we.poids) "
+        "FROM workout_exercises we "
+        "JOIN workouts w ON w.id = we.workout_id "
+        "WHERE we.categorie IS NOT NULL "
+        "AND we.categorie != '' "
+        "AND w.date >= date('now', '-6 days') "
+        "GROUP BY we.categorie"
+        );
+
+    while (q.next()) {
+        QString cat = q.value(0).toString();
+        double vol = q.value(1).toDouble();
+
+        qDebug() << "CAT =" << cat << "VOL =" << vol;
+
+        if (volumeParCategorie.contains(cat))
+            volumeParCategorie[cat] = vol;
     }
+
+    double total = 0;
+    for (const QString& cat : categories)
+        total += volumeParCategorie[cat];
+
+    qDebug() << "TOTAL =" << total;
 
     for (int i = 0; i < categories.size(); i++) {
         QVariantMap item;
         item["categorie"] = categories[i];
-        item["emoji"]     = emojis[i];
-        item["color"]     = colors[i];
-        item["count"]     = counts[i];
-        item["pct"]       = total > 0
-                          ? qRound(counts[i] * 100.0 / total)
+        item["emoji"] = emojis[i];
+        item["color"] = colors[i];
+        item["volume"] = volumeParCategorie[categories[i]];
+        item["pct"] = total > 0
+                          ? qRound(volumeParCategorie[categories[i]] * 100.0 / total)
                           : 0;
+
         result.append(item);
     }
 
     return result;
 }
+
+
 
 void ProgressViewModel::ajouterPoids(double poids) {
     DatabaseManager::instance().execQuery(

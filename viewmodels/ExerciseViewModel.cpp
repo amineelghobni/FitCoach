@@ -144,6 +144,21 @@ void ExerciseViewModel::ajouterWorkout(const QString& nom)
     DatabaseManager::instance().execQuery(
         "INSERT INTO workouts (nom) VALUES (?)", { nom }
         );
+    auto qFirstWorkoutBadge = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'FIRST_WORKOUT'"
+        );
+
+    if (qFirstWorkoutBadge.next() && qFirstWorkoutBadge.value(0).toInt() == 0) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO badges (code, nom, description) "
+            "VALUES (?, ?, ?)",
+            {
+                "FIRST_WORKOUT",
+                "🥇 Première Séance",
+                "Première séance créée"
+            }
+            );
+    }
     m_workouts->loadFromDb();
 
     auto q = DatabaseManager::instance().execQuery(
@@ -152,6 +167,29 @@ void ExerciseViewModel::ajouterWorkout(const QString& nom)
     if (q.next()) {
         m_currentWorkoutId = q.value(0).toInt();
         m_exercises->loadFromDb(m_currentWorkoutId);
+        auto qCount = DatabaseManager::instance().execQuery(
+            "SELECT COUNT(*) FROM workouts"
+            );
+
+        if (qCount.next() && qCount.value(0).toInt() >= 10) {
+
+            auto qTenWorkoutBadge = DatabaseManager::instance().execQuery(
+                "SELECT COUNT(*) FROM badges WHERE code = 'TEN_WORKOUTS'"
+                );
+
+            if (qTenWorkoutBadge.next() && qTenWorkoutBadge.value(0).toInt() == 0) {
+
+                DatabaseManager::instance().execQuery(
+                    "INSERT INTO badges (code, nom, description) "
+                    "VALUES (?, ?, ?)",
+                    {
+                        "TEN_WORKOUTS",
+                        "💪 10 Séances",
+                        "10 séances enregistrées"
+                    }
+                    );
+            }
+        }
         emit currentWorkoutChanged();
     }
 }
@@ -159,12 +197,30 @@ void ExerciseViewModel::ajouterWorkout(const QString& nom)
 void ExerciseViewModel::ajouterExercice(int workoutId, const QString& nom,
                                         int sets, int reps, double poids)
 {
-    DatabaseManager::instance().execQuery(
-        "INSERT INTO workout_exercises (workout_id, nom, sets, reps, poids) "
-        "VALUES (?, ?, ?, ?, ?)",
-        { workoutId, nom, sets, reps, poids }
+    auto qCat = DatabaseManager::instance().execQuery(
+        "SELECT categorie "
+        "FROM exercises_library "
+        "WHERE LOWER(nom) = LOWER(?) "
+        "LIMIT 1",
+        { nom }
         );
+
+    QString categorie = "";
+
+    if (qCat.next())
+        categorie = qCat.value(0).toString();
+
+    qDebug() << "CAT =" << categorie << "NOM =" << nom;
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_exercises "
+        "(workout_id, nom, categorie, sets, reps, poids) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        { workoutId, nom, categorie, sets, reps, poids }
+        );
+
     m_exercises->loadFromDb(workoutId);
+    emit currentWorkoutChanged();
 }
 
 void ExerciseViewModel::toggleFait(int exerciceId)
@@ -193,6 +249,7 @@ void ExerciseViewModel::supprimerWorkout(int workoutId)
         m_exercises->clear();
         emit currentWorkoutChanged();
     }
+    emit currentWorkoutChanged();
 }
 
 void ExerciseViewModel::selectWorkout(int workoutId)
@@ -244,6 +301,25 @@ int ExerciseViewModel::streakExercices() const {
             break;
         }
     }
+    if (streak >= 7) {
+
+        auto qBadge = DatabaseManager::instance().execQuery(
+            "SELECT COUNT(*) FROM badges WHERE code = 'STREAK_7'"
+            );
+
+        if (qBadge.next() && qBadge.value(0).toInt() == 0) {
+
+            DatabaseManager::instance().execQuery(
+                "INSERT INTO badges (code, nom, description) "
+                "VALUES (?, ?, ?)",
+                {
+                    "STREAK_7",
+                    "🔥 Streak 7 jours",
+                    "7 jours consécutifs d'entraînement"
+                }
+                );
+        }
+    }
     return streak;
 }
 
@@ -256,6 +332,7 @@ void ExerciseViewModel::modifierExercice(int exerciceId, const QString& nom,
         );
     if (m_currentWorkoutId != -1)
         m_exercises->loadFromDb(m_currentWorkoutId);
+    emit currentWorkoutChanged();
 }
 
 void ExerciseViewModel::supprimerExercice(int exerciceId)
@@ -265,6 +342,7 @@ void ExerciseViewModel::supprimerExercice(int exerciceId)
         );
     if (m_currentWorkoutId != -1)
         m_exercises->loadFromDb(m_currentWorkoutId);
+    emit currentWorkoutChanged();
 }
 
 bool ExerciseViewModel::seanceTerminee() const { return m_seanceTerminee; }
@@ -343,46 +421,74 @@ bool ExerciseViewModel::verifierEtSauvegarderPR(int workoutId,
                                                 const QString& nom,
                                                 int reps, double poids)
 {
-    // Volume de cette série
-    double volumeSerie = reps * poids;
+    auto qSets = DatabaseManager::instance().execQuery(
+        "SELECT sets FROM workout_exercises "
+        "WHERE workout_id = ? AND nom = ? "
+        "ORDER BY id DESC LIMIT 1",
+        { workoutId, nom }
+        );
 
-    // Récupère le meilleur PR existant pour cet exercice
+    int sets = 1;
+
+    if (qSets.next())
+        sets = qSets.value(0).toInt();
+
+    double volumeSerie = sets * reps * poids;
+
     auto q = DatabaseManager::instance().execQuery(
         "SELECT poids, reps, volume FROM personal_records "
-        "WHERE exercice_nom = ? ORDER BY volume DESC LIMIT 1",
+        "WHERE exercice_nom = ? "
+        "ORDER BY volume DESC LIMIT 1",
         { nom }
         );
 
     bool estNouveauPR = false;
 
     if (!q.next()) {
-        // Premier PR pour cet exercice
         estNouveauPR = true;
     } else {
         double ancienVolume = q.value(2).toDouble();
         double ancienPoids  = q.value(0).toDouble();
 
-        // Nouveau PR si volume supérieur OU poids supérieur
         if (volumeSerie > ancienVolume || poids > ancienPoids)
             estNouveauPR = true;
     }
 
     if (estNouveauPR) {
-        // Sauvegarde le nouveau PR
+
         DatabaseManager::instance().execQuery(
             "INSERT INTO personal_records "
             "(exercice_nom, poids, reps, volume, date, workout_id) "
             "VALUES (?, ?, ?, ?, ?, ?)",
             { nom, poids, reps, volumeSerie,
-             QDate::currentDate().toString("yyyy-MM-dd"), workoutId }
+             QDate::currentDate().toString("yyyy-MM-dd"),
+             workoutId }
             );
+
+        auto qBadge = DatabaseManager::instance().execQuery(
+            "SELECT COUNT(*) FROM badges WHERE code = 'FIRST_PR'"
+            );
+
+        if (qBadge.next() && qBadge.value(0).toInt() == 0) {
+            DatabaseManager::instance().execQuery(
+                "INSERT INTO badges (code, nom, description) "
+                "VALUES (?, ?, ?)",
+                {
+                    "FIRST_PR",
+                    "🏆 Premier Record",
+                    "Premier record personnel obtenu"
+                }
+                );
+        }
 
         m_nouveauPR = true;
         m_nomPR     = nom;
         m_poidsPR   = poids;
+
         emit prChanged();
 
-        qDebug() << "🏆 Nouveau PR !" << nom << poids << "kg ×" << reps;
+        qDebug() << "🏆 Nouveau PR !" << nom
+                 << poids << "kg ×" << reps;
     }
 
     return estNouveauPR;
