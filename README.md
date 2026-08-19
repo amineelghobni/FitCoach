@@ -5,6 +5,7 @@ Application desktop fitness & nutrition avec coach IA intégré, développée en
 ![Qt](https://img.shields.io/badge/Qt-6.11-41CD52?logo=qt&logoColor=white)
 ![C++](https://img.shields.io/badge/C++-20-00599C?logo=cplusplus&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+![Build](https://github.com/amineelghobni/FitCoach/actions/workflows/build.yml/badge.svg)
 
 ## 📋 Description
 
