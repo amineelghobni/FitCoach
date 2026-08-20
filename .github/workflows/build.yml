@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ------------------------------------------------------
-      # Qt + MinGW
+      # Install Qt + MinGW
       # ------------------------------------------------------
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -35,6 +35,9 @@ jobs:
           echo "$IQTA_TOOLS/mingw1310_64/bin" >> "$GITHUB_PATH"
           echo "MinGW path: $IQTA_TOOLS/mingw1310_64/bin"
 
+      # ------------------------------------------------------
+      # Check compiler
+      # ------------------------------------------------------
       - name: Check compiler
         shell: bash
         run: |
@@ -51,12 +54,12 @@ jobs:
           choco install cppcheck --version=2.19.0 --yes --no-progress
 
       # ------------------------------------------------------
-      # Check Cppcheck installation
+      # Check Cppcheck
       # ------------------------------------------------------
       - name: Check Cppcheck
-        shell: bash
+        shell: powershell
         run: |
-          cppcheck --version
+          & "C:\Program Files\Cppcheck\cppcheck.exe" --version
 
       # ------------------------------------------------------
       # Generate config.local.h
@@ -73,23 +76,23 @@ jobs:
       # Run Cppcheck
       # ------------------------------------------------------
       - name: Run Cppcheck
-        shell: bash
+        shell: powershell
         run: |
-          cppcheck \
-            --enable=warning,style,performance,portability \
-            --std=c++20 \
-            --platform=win64 \
-            --library=qt \
-            --inline-suppr \
-            --suppressions-list=cppcheck-suppressions.txt \
-            --error-exitcode=1 \
-            database \
-            viewmodels \
-            services \
+          & "C:\Program Files\Cppcheck\cppcheck.exe" `
+            --enable=warning,style,performance,portability `
+            --std=c++20 `
+            --platform=win64 `
+            --library=qt `
+            --inline-suppr `
+            --suppressions-list=cppcheck-suppressions.txt `
+            --error-exitcode=1 `
+            database `
+            viewmodels `
+            services `
             main.cpp
 
       # ------------------------------------------------------
-      # Configure CMake
+      # Configure CMake with coverage
       # ------------------------------------------------------
       - name: Configure CMake
         shell: bash
@@ -139,7 +142,7 @@ jobs:
           python -m pip install gcovr
 
       # ------------------------------------------------------
-      # Generate coverage
+      # Generate coverage report
       # ------------------------------------------------------
       - name: Generate coverage report
         shell: bash
