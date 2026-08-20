@@ -197,20 +197,21 @@ void ExerciseViewModel::ajouterWorkout(const QString& nom)
 void ExerciseViewModel::ajouterExercice(int workoutId, const QString& nom,
                                         int sets, int reps, double poids)
 {
+    // 1. Essai exact
     auto qCat = DatabaseManager::instance().execQuery(
-        "SELECT categorie "
-        "FROM exercises_library "
-        "WHERE LOWER(nom) = LOWER(?) "
-        "LIMIT 1",
+        "SELECT categorie FROM exercises_library WHERE LOWER(nom) = LOWER(?) LIMIT 1",
         { nom }
         );
 
     QString categorie = "";
-
-    if (qCat.next())
+    if (qCat.next()) {
         categorie = qCat.value(0).toString();
+    } else {
+        // 2. Fallback fuzzy
+        categorie = DatabaseManager::instance().trouverCategorieFuzzy(nom);
+    }
 
-    qDebug() << "CAT =" << categorie << "NOM =" << nom;
+    // (étape 3 : fallback IA, à ajouter plus tard si le fuzzy ne suffit pas)
 
     DatabaseManager::instance().execQuery(
         "INSERT INTO workout_exercises "
@@ -222,7 +223,6 @@ void ExerciseViewModel::ajouterExercice(int workoutId, const QString& nom,
     m_exercises->loadFromDb(workoutId);
     emit currentWorkoutChanged();
 }
-
 void ExerciseViewModel::toggleFait(int exerciceId)
 {
     DatabaseManager::instance().execQuery(
