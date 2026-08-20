@@ -514,7 +514,7 @@ QVariantList ExerciseViewModel::verifierBadgesSeances()
 
     for (const auto& badge : badges) {
 
-        if (totalSeances < badge.seuil)
+        if (nombreSeances < badge.seuil)
             continue;
 
         auto qBadge = DatabaseManager::instance().execQuery(
