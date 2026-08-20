@@ -18,6 +18,18 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Install Cppcheck
+        run: choco install cppcheck -y
+
+      - name: Run Cppcheck
+        shell: cmd
+        run: |
+            cppcheck ^
+            --enable=warning,style,performance,portability ^
+            --error-exitcode=1 ^
+            --inline-suppr ^
+            --suppressions-list=cppcheck-suppressions.txt ^
+            .
       - name: Generate config.local.h from secret
         shell: bash
         run: |
