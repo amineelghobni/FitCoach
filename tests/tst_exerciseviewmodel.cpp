@@ -9,6 +9,10 @@ class TestExerciseViewModel : public QObject
     Q_OBJECT
 
 private slots:
+    void initTestCase();
+    void init();
+    void cleanupTestCase();
+
     void labelDate_aujourdhui();
     void labelDate_hier();
     void labelDate_ilya2jours();
@@ -22,8 +26,43 @@ private slots:
     void verifierEtSauvegarderPR_recordExistant();
     void calculerCaloriesBrulees_workoutVide();
     void calculerVolume_workoutVide();
-
 };
+
+void TestExerciseViewModel::initTestCase()
+{
+    QVERIFY(DatabaseManager::instance().openTestDatabase());
+}
+
+void TestExerciseViewModel::cleanupTestCase()
+{
+    DatabaseManager::instance().closeTestDatabase();
+}
+void TestExerciseViewModel::init()
+{
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM workout_exercises"
+        );
+
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM workouts"
+        );
+
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM personal_records"
+        );
+
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM users"
+        );
+
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM meals"
+        );
+
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM weight_history"
+        );
+}
 
 void TestExerciseViewModel::labelDate_aujourdhui()
 {
@@ -163,7 +202,9 @@ void TestExerciseViewModel::calculerCaloriesBrulees()
 }
 void TestExerciseViewModel::streakExercices_aucunWorkout()
 {
-    QSKIP("Requires isolated SQLite test database");
+    ExerciseViewModel vm;
+
+    QCOMPARE(vm.streakExercices(), 0);
 }
 void TestExerciseViewModel::verifierEtSauvegarderPR_batRecord()
 {
@@ -268,6 +309,8 @@ void TestExerciseViewModel::calculerVolume_workoutVide()
 
     QCOMPARE(vm.calculerVolume(workoutId), 0);
 }
+
+
 
 QTEST_MAIN(TestExerciseViewModel)
 #include "tst_exerciseviewmodel.moc"

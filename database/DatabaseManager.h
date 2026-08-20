@@ -15,6 +15,8 @@ public:
     static DatabaseManager& instance();
 
     bool isOpen() const;
+    bool openTestDatabase();
+    void closeTestDatabase();
 
     bool isFirstLaunch() const;
 
@@ -42,6 +44,7 @@ private:
     void createTables();
 
     QSqlDatabase m_db;
+    QSqlDatabase m_testDb;
 
     void seedExercisesLibrary();
 };
