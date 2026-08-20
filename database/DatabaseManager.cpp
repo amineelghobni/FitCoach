@@ -174,21 +174,55 @@ bool DatabaseManager::isOpen() const
     return m_db.isOpen();
 }
 
-// ← const ajouté ici
+bool DatabaseManager::openTestDatabase()
+{
+    if (QSqlDatabase::contains("fitcoach_test")) {
+        m_testDb = QSqlDatabase::database("fitcoach_test");
+    } else {
+        m_testDb = QSqlDatabase::addDatabase("QSQLITE", "fitcoach_test");
+        m_testDb.setDatabaseName(":memory:");
+    }
+
+    if (!m_testDb.open()) {
+        qDebug() << "❌ Erreur ouverture BDD de test:"
+                 << m_testDb.lastError().text();
+        return false;
+    }
+
+    createTables();
+
+    return true;
+}
+void DatabaseManager::closeTestDatabase()
+{
+    if (m_testDb.isOpen())
+        m_testDb.close();
+
+    m_testDb = QSqlDatabase();
+    QSqlDatabase::removeDatabase("fitcoach_test");
+}
+
+
 QSqlQuery DatabaseManager::execQuery(const QString& sql) const
 {
-    QSqlQuery query(m_db);
+    QSqlDatabase db = m_testDb.isOpen() ? m_testDb : m_db;
+
+    QSqlQuery query(db);
+
     if (!query.exec(sql)) {
         qDebug() << "❌ SQL Error:" << query.lastError().text();
         qDebug() << "   Query:" << sql;
     }
+
     return query;
 }
 
 QSqlQuery DatabaseManager::execQuery(const QString& sql,
                                      const QVariantList& params) const
 {
-    QSqlQuery query(m_db);
+    QSqlDatabase db = m_testDb.isOpen() ? m_testDb : m_db;
+
+    QSqlQuery query(db);
 
     if (!query.prepare(sql)) {
         qDebug() << "❌ SQL Prepare Error:" << query.lastError().text();
