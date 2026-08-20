@@ -15,6 +15,7 @@ class ProgressViewModel : public QObject
     Q_PROPERTY(QVariantList caloriesWeek  READ caloriesWeek   NOTIFY dataChanged)
     Q_PROPERTY(QVariantList topPRs        READ topPRs         NOTIFY dataChanged)
     Q_PROPERTY(QVariantList badges READ badges NOTIFY dataChanged)
+    Q_PROPERTY(QVariantList progressionBadges READ progressionBadges NOTIFY dataChanged)
     Q_PROPERTY(QVariantList repartitionMusculaire READ repartitionMusculaire NOTIFY dataChanged)
 
 public:
@@ -31,6 +32,7 @@ public:
     QVariantList topPRs()                  const;
     QVariantList repartitionMusculaire()   const;
     QVariantList badges() const;
+    QVariantList progressionBadges() const;
 
     Q_INVOKABLE void ajouterPoids(double poids);
     Q_INVOKABLE void refresh();
