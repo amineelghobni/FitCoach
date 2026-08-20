@@ -212,7 +212,7 @@ void CoachViewModel::appelAPI(const QString& userMessage)
     }
 
     QJsonObject body;
-    body["model"]       = "llama-3.3-70b-versatile";
+    body["model"]       = "openai/gpt-oss-120b";
     body["messages"]    = messagesArray;
     body["max_tokens"]  = 1024;
     body["temperature"] = 0.7;
@@ -363,7 +363,7 @@ Estime les quantités visuellement. Sois précis.
     messages.append(userMessage);
 
     QJsonObject body;
-    body["model"]      = "meta-llama/llama-4-scout-17b-16e-instruct";
+    body["model"]      = "qwen/qwen3.6-27b";
     body["messages"]   = messages;
     body["max_tokens"] = 300;
 

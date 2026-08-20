@@ -28,6 +28,8 @@ public:
 
     QString getSetting(const QString& key, const QString& defaultValue = "") const;
     void    setSetting(const QString& key, const QString& value);
+    QString trouverCategorieFuzzy(const QString& nomExercice, int seuilMax = 3) const;
+
 
 private:
     explicit DatabaseManager(QObject* parent = nullptr);

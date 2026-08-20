@@ -348,3 +348,37 @@ void DatabaseManager::seedExercisesLibrary()
 
     qDebug() << "✅ Bibliothèque exercices créée :" << exercises.size() << "exercices";
 }
+
+static int levenshtein(const QString& a, const QString& b) {
+    int m = a.size(), n = b.size();
+    QVector<QVector<int>> d(m + 1, QVector<int>(n + 1));
+    for (int i = 0; i <= m; i++) d[i][0] = i;
+    for (int j = 0; j <= n; j++) d[0][j] = j;
+    for (int i = 1; i <= m; i++) {
+        for (int j = 1; j <= n; j++) {
+            int cost = (a[i-1].toLower() == b[j-1].toLower()) ? 0 : 1;
+            d[i][j] = std::min({ d[i-1][j] + 1, d[i][j-1] + 1, d[i-1][j-1] + cost });
+        }
+    }
+    return d[m][n];
+}
+
+QString DatabaseManager::trouverCategorieFuzzy(const QString& nomExercice, int seuilMax) const
+{
+    auto q = execQuery("SELECT nom, categorie FROM exercises_library");
+
+    QString meilleureCategorie;
+    int meilleureDistance = seuilMax + 1;
+
+    while (q.next()) {
+        QString nomLib = q.value(0).toString();
+        int dist = levenshtein(nomExercice.trimmed(), nomLib.trimmed());
+        if (dist < meilleureDistance) {
+            meilleureDistance = dist;
+            meilleureCategorie = q.value(1).toString();
+        }
+    }
+
+    if (meilleureDistance <= seuilMax) return meilleureCategorie;
+    return "";  // rien d'assez proche
+}

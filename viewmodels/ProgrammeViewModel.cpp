@@ -111,7 +111,7 @@ QString ProgrammeViewModel::construirePrompt() const
         niveauFilter = "'debutant','intermediaire','avance'";
 
     auto qEx = DatabaseManager::instance().execQuery(
-        "SELECT nom, muscle_principal, sets_recommandes, met_value "
+        "SELECT nom, muscle_principal, met_value "   // ← retire sets_recommandes
         "FROM exercises_library "
         "WHERE (equipement = ? OR equipement = 'aucun') "
         "AND niveau IN (" + niveauFilter + ") "
@@ -135,7 +135,8 @@ QString ProgrammeViewModel::construirePrompt() const
                                     "- Objectif: " + objectif + "\n"
                                   "- Poids: " + QString::number(poids) + " kg\n"
                                                 "- Type de séance: " + categorie + "\n\n"
-                                   "Exercices disponibles:\n" + exercicesDisponibles.join("\n") + "\n\n"
+                                   "Exercices disponibles (utilise UNIQUEMENT le nom avant la parenthèse, sans le muscle):\n"
+                                    + exercicesDisponibles.join("\n") + "\n\n"
                                                          "Format JSON exact:\n"
                                                          "{\n"
                                                          "  \"nom\": \"nom de la séance\",\n"
@@ -169,7 +170,7 @@ void ProgrammeViewModel::genererProgramme()
     messages.append(userMsg);
 
     QJsonObject body;
-    body["model"]       = "llama-3.3-70b-versatile";
+    body["model"]       = "openai/gpt-oss-120b";
     body["messages"]    = messages;
     body["max_tokens"]  = 1000;
     body["temperature"] = 0.7;
@@ -266,7 +267,6 @@ void ProgrammeViewModel::adopterSeance()
 {
     if (m_seance.nom.isEmpty()) return;
 
-    // Crée la séance dans workouts
     DatabaseManager::instance().execQuery(
         "INSERT INTO workouts (nom, date) VALUES (?, ?)",
         { m_seance.nom, QDate::currentDate().toString("yyyy-MM-dd") }
@@ -278,12 +278,18 @@ void ProgrammeViewModel::adopterSeance()
     if (!q.next()) return;
     int workoutId = q.value(0).toInt();
 
-    // Ajoute les exercices
     for (const auto& ex : m_seance.exercices) {
+        auto qCat = DatabaseManager::instance().execQuery(
+            "SELECT categorie FROM exercises_library WHERE LOWER(nom) = LOWER(?) LIMIT 1",
+            { ex.nom }
+            );
+        QString categorie = "";
+        if (qCat.next()) categorie = qCat.value(0).toString();
+
         DatabaseManager::instance().execQuery(
             "INSERT INTO workout_exercises "
-            "(workout_id, nom, sets, reps, poids) VALUES (?, ?, ?, ?, ?)",
-            { workoutId, ex.nom, ex.sets, ex.reps, ex.poids }
+            "(workout_id, nom, categorie, sets, reps, poids) VALUES (?, ?, ?, ?, ?, ?)",
+            { workoutId, ex.nom, categorie, ex.sets, ex.reps, ex.poids }
             );
     }
 
