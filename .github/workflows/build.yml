@@ -1,35 +1,66 @@
 name: Build & Test
+
 on:
   push:
   pull_request:
+
 jobs:
   build:
     runs-on: windows-latest
+
     steps:
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
+
+      # ------------------------------------------------------
+      # Qt + MinGW
+      # ------------------------------------------------------
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.9.1'
-          arch: 'win64_msvc2022_64'
+          arch: 'win64_mingw'
           cache: true
-      - name: Setup MSVC environment
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-      - name: Install Cppcheck
-        run: choco install cppcheck -y
+          tools: 'tools_mingw1310,qt.tools.win64_mingw1310'
 
-      - name: Run Cppcheck
-        shell: cmd
+      # ------------------------------------------------------
+      # Setup MinGW
+      # ------------------------------------------------------
+      - name: Setup MinGW
+        shell: bash
         run: |
-            cppcheck ^
-            --enable=warning,style,performance,portability ^
-            --error-exitcode=1 ^
-            --inline-suppr ^
-            --suppressions-list=cppcheck-suppressions.txt ^
-            .
+          echo "$IQTA_TOOLS/mingw1310_64/bin" >> "$GITHUB_PATH"
+          echo "MinGW path: $IQTA_TOOLS/mingw1310_64/bin"
+
+      - name: Check compiler
+        shell: bash
+        run: |
+          gcc --version
+          g++ --version
+          gcov --version
+
+      # ------------------------------------------------------
+      # Install Cppcheck
+      # ------------------------------------------------------
+      - name: Install Cppcheck
+        shell: powershell
+        run: |
+          choco install cppcheck --version=2.19.0 --yes --no-progress
+
+      # ------------------------------------------------------
+      # Check Cppcheck installation
+      # ------------------------------------------------------
+      - name: Check Cppcheck
+        shell: bash
+        run: |
+          cppcheck --version
+
+      # ------------------------------------------------------
+      # Generate config.local.h
+      # ------------------------------------------------------
       - name: Generate config.local.h from secret
         shell: bash
         run: |
@@ -37,11 +68,99 @@ jobs:
           #pragma once
           #define GROQ_API_KEY "${{ secrets.GROQ_API_KEY }}"
           EOF
+
+      # ------------------------------------------------------
+      # Run Cppcheck
+      # ------------------------------------------------------
+      - name: Run Cppcheck
+        shell: bash
+        run: |
+          cppcheck \
+            --enable=warning,style,performance,portability \
+            --std=c++20 \
+            --platform=win64 \
+            --library=qt \
+            --inline-suppr \
+            --suppressions-list=cppcheck-suppressions.txt \
+            --error-exitcode=1 \
+            database \
+            viewmodels \
+            services \
+            main.cpp
+
+      # ------------------------------------------------------
+      # Configure CMake
+      # ------------------------------------------------------
       - name: Configure CMake
-        run: cmake -S . -B build -G "Ninja" -DCMAKE_BUILD_TYPE=Debug
+        shell: bash
+        run: |
+          cmake \
+            -S . \
+            -B build \
+            -G "Ninja" \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DENABLE_COVERAGE=ON \
+            -DCMAKE_C_COMPILER=gcc \
+            -DCMAKE_CXX_COMPILER=g++
+
+      # ------------------------------------------------------
+      # Build application
+      # ------------------------------------------------------
       - name: Build application
-        run: cmake --build build --target appFitCoach
+        shell: bash
+        run: |
+          cmake --build build --target appFitCoach --parallel
+
+      # ------------------------------------------------------
+      # Build tests
+      # ------------------------------------------------------
       - name: Build tests
-        run: cmake --build build --target tst_exerciseviewmodel
+        shell: bash
+        run: |
+          cmake --build build --target tst_exerciseviewmodel --parallel
+
+      # ------------------------------------------------------
+      # Run tests
+      # ------------------------------------------------------
       - name: Run tests
-        run: ctest --test-dir build --output-on-failure
+        shell: bash
+        run: |
+          ctest \
+            --test-dir build \
+            --output-on-failure
+
+      # ------------------------------------------------------
+      # Install gcovr
+      # ------------------------------------------------------
+      - name: Install gcovr
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install gcovr
+
+      # ------------------------------------------------------
+      # Generate coverage
+      # ------------------------------------------------------
+      - name: Generate coverage report
+        shell: bash
+        run: |
+          gcovr \
+            --root . \
+            --object-directory build \
+            --gcov-executable gcov \
+            --exclude '.*tests/.*' \
+            --print-summary \
+            --xml-pretty \
+            --xml coverage.xml \
+            --html-details coverage.html
+
+      # ------------------------------------------------------
+      # Upload coverage reports
+      # ------------------------------------------------------
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            coverage.html

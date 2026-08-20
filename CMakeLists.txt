@@ -99,3 +99,21 @@ target_link_libraries(tst_exerciseviewmodel
 )
 
 add_test(NAME tst_exerciseviewmodel COMMAND tst_exerciseviewmodel)
+# ── Code Coverage ──────────────────────────────────────────
+option(ENABLE_COVERAGE "Enable code coverage" OFF)
+
+if(ENABLE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    message(STATUS "Code coverage enabled")
+
+    target_compile_options(tst_exerciseviewmodel
+        PRIVATE
+            --coverage
+            -O0
+            -g
+    )
+
+    target_link_options(tst_exerciseviewmodel
+        PRIVATE
+            --coverage
+    )
+endif()
