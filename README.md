@@ -6,6 +6,8 @@ Application desktop fitness & nutrition avec coach IA intégré, développée en
 ![C++](https://img.shields.io/badge/C++-20-00599C?logo=cplusplus&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Build](https://github.com/amineelghobni/FitCoach/actions/workflows/build.yml/badge.svg)
+![Coverage](https://img.shields.io/badge/coverage-35%25-orange)
+![Cppcheck](https://img.shields.io/badge/Cppcheck-enabled-brightgreen)
 
 ## 📋 Description
 
@@ -96,12 +98,26 @@ cmake --build build
 
 ## 🧪 Tests & CI
 
-Les tests unitaires (Qt Test) et le build sont exécutés automatiquement à chaque push et pull request via GitHub Actions.
+Les tests unitaires (Qt Test), l'analyse statique Cppcheck et le build sont exécutés
+automatiquement via GitHub Actions à chaque push et pull request.
+
+### Tests locaux
 
 ```bash
 cmake --build build --target tst_exerciseviewmodel
 ctest --test-dir build --output-on-failure
 ```
+
+### Couverture
+
+La couverture du code est générée automatiquement avec **GCOVR** dans GitHub Actions.
+
+Résultat actuel :
+- **Lignes : 35.0 %**
+- **Fonctions : 29.6 %**
+- **Branches : 31.6 %**
+
+Le rapport détaillé est disponible dans l'artefact `coverage-report` du workflow GitHub Actions.
 
 ## 📸 Aperçu
 
@@ -128,9 +144,11 @@ ctest --test-dir build --output-on-failure
 - [ ] Synchronisation des données entre desktop et mobile
 
 ### Qualité & industrialisation
-- [ ] Couverture de tests étendue (ViewModels métier : volume, PR, calories)
-- [ ] Base de données de test isolée (SQLite en mémoire), découplée de la base de développement
-- [ ] Analyse statique du code (SonarQube ou équivalent open-source)
+
+- [x] Première couverture de tests métier (volume, PR, calories, dates)
+- [ ] Augmenter la couverture des ViewModels métier
+- [ ] Base de données de test isolée (SQLite en mémoire)
+- [x] Analyse statique du code avec Cppcheck
 - [ ] Pipeline CI multi-plateforme (Linux/Windows/macOS)
 
 ## 👤 Auteur

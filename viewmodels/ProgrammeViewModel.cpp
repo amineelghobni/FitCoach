@@ -5,17 +5,19 @@
 #include <QJsonArray>
 #include <QNetworkRequest>
 #include <QDate>
+#include <algorithm>
 #include "config.local.h"
 
 ProgrammeViewModel::ProgrammeViewModel(QObject* parent)
     : QObject(parent)
     , m_network(new QNetworkAccessManager(this))
+    , m_seance{}
 {}
 
 bool        ProgrammeViewModel::loading()         const { return m_loading; }
 bool        ProgrammeViewModel::hasProgramme()    const { return !m_seance.nom.isEmpty(); }
-QString     ProgrammeViewModel::nomSeance()       const { return m_seance.nom; }
-QString     ProgrammeViewModel::categorieSeance() const { return m_seance.categorie; }
+const QString& ProgrammeViewModel::nomSeance() const { return m_seance.nom; }
+const QString& ProgrammeViewModel::categorieSeance() const { return m_seance.categorie; }
 
 QVariantList ProgrammeViewModel::exercices() const {
     QVariantList list;
@@ -73,11 +75,17 @@ QString ProgrammeViewModel::determinerProchaineMuscle() const
 
     // Rotation Push → Pull → Legs → Core
     QStringList rotation = {"Push", "Pull", "Legs", "Core"};
-    for (const QString& cat : rotation) {
-        if (!muscles_faits.contains(cat)) return cat;
-    }
 
-    // Si tout fait récemment, reprend Push
+    auto it = std::find_if(
+        rotation.cbegin(),
+        rotation.cend(),
+        [&muscles_faits](const QString& cat) {
+            return !muscles_faits.contains(cat);
+        }
+        );
+
+    if (it != rotation.cend())
+        return *it;
     return "Push";
 }
 
@@ -213,36 +221,40 @@ void ProgrammeViewModel::genererProgramme()
         reply->deleteLater();
     });
 }
-
 void ProgrammeViewModel::parserReponseIA(const QString& json)
 {
     auto doc = QJsonDocument::fromJson(json.toUtf8());
+
     if (doc.isNull() || !doc.isObject()) {
         qDebug() << "❌ JSON invalide:" << json;
         return;
     }
 
     auto obj = doc.object();
+
     m_seance.nom       = obj["nom"].toString();
     m_seance.categorie = obj["categorie"].toString();
     m_seance.exercices.clear();
 
-    auto exercices = obj["exercices"].toArray();
-    for (const auto& ex : exercices) {
+    auto exercicesArray = obj["exercices"].toArray();
+
+    for (const auto& ex : exercicesArray) {
         auto exObj = ex.toObject();
         QString nomEx = exObj["nom"].toString();
 
-        // Récupère le MET depuis la BDD
+        // Récupère le MET et le muscle depuis la BDD
         auto qMet = DatabaseManager::instance().execQuery(
-            "SELECT met_value, muscle_principal FROM exercises_library "
+            "SELECT met_value, muscle_principal "
+            "FROM exercises_library "
             "WHERE nom = ? LIMIT 1",
             { nomEx }
             );
 
-        double met    = 5.0;
-        QString muscle = "";
+        double met = 5.0;
+        QString muscle;
+
         if (qMet.next()) {
-            met    = qMet.value(0).toDouble();
+            met = qMet.value(0).toDouble();
             muscle = qMet.value(1).toString();
         }
 
@@ -259,8 +271,12 @@ void ProgrammeViewModel::parserReponseIA(const QString& json)
     }
 
     emit programmeChanged();
-    qDebug() << "✅ Programme généré:" << m_seance.nom
-             << "avec" << m_seance.exercices.size() << "exercices";
+
+    qDebug() << "✅ Programme généré:"
+             << m_seance.nom
+             << "avec"
+             << m_seance.exercices.size()
+             << "exercices";
 }
 
 void ProgrammeViewModel::adopterSeance()

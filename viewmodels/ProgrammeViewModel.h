@@ -39,8 +39,8 @@ public:
 
     bool        loading()           const;
     bool        hasProgramme()      const;
-    QString     nomSeance()         const;
-    QString     categorieSeance()   const;
+    const QString& nomSeance() const;
+    const QString& categorieSeance() const;
     QVariantList exercices()        const;
     int         caloriesEstimees()  const;
 
