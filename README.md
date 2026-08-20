@@ -6,7 +6,7 @@ Application desktop fitness & nutrition avec coach IA intégré, développée en
 ![C++](https://img.shields.io/badge/C++-20-00599C?logo=cplusplus&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Build](https://github.com/amineelghobni/FitCoach/actions/workflows/build.yml/badge.svg)
-![Coverage](https://img.shields.io/badge/coverage-35%25-orange)
+![Coverage](https://img.shields.io/badge/coverage-77.1%25-brightgreen)
 ![Cppcheck](https://img.shields.io/badge/Cppcheck-enabled-brightgreen)
 
 ## 📋 Description
@@ -112,10 +112,15 @@ ctest --test-dir build --output-on-failure
 
 La couverture du code est générée automatiquement avec **GCOVR** dans GitHub Actions.
 
-Résultat actuel :
-- **Lignes : 35.0 %**
-- **Fonctions : 29.6 %**
-- **Branches : 31.6 %**
+Dernier résultat sur le code actuellement couvert par la suite de tests :
+
+- **Lignes : 77.1 %**
+- **Fonctions : 76.8 %**
+- **Branches : 39.5 %**
+- **ExerciseViewModel.cpp : 78.2 % de lignes**
+- **ExerciseViewModel.cpp : 79.5 % de fonctions**
+
+La couverture sera progressivement étendue aux autres composants métier (`SessionViewModel`, `ProgrammeViewModel`, `NutritionViewModel`, `CoachViewModel`, etc.).
 
 Le rapport détaillé est disponible dans l'artefact `coverage-report` du workflow GitHub Actions.
 
