@@ -476,7 +476,7 @@ QVariantList ExerciseViewModel::verifierBadgesSeances()
     if (!q.next())
         return nouveauxBadges;
 
-    const int totalSeances = q.value(0).toInt();
+    const int nombreSeances = q.value(0).toInt();
 
     struct BadgeCondition {
         const char* code;

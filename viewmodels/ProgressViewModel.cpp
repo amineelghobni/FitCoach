@@ -226,14 +226,14 @@ QVariantList ProgressViewModel::progressionBadges() const
     QVariantList result;
 
     // Nombre total de séances
-    int totalSeances = 0;
+    int nombreSeances = 0;
 
     auto qSeances = DatabaseManager::instance().execQuery(
         "SELECT COUNT(*) FROM workouts"
         );
 
     if (qSeances.next())
-        totalSeances = qSeances.value(0).toInt();
+        nombreSeances = qSeances.value(0).toInt();
 
     // Nombre total de PR
     int totalPR = 0;
@@ -281,28 +281,28 @@ QVariantList ProgressViewModel::progressionBadges() const
             "FIRST_WORKOUT",
             "🥇 Première Séance",
             "Créer ta première séance",
-            totalSeances,
+            nombreSeances,
             1
         },
         {
             "FIVE_WORKOUTS",
             "💪 Régulier",
             "Atteindre 5 séances",
-            totalSeances,
+            nombreSeances,
             5
         },
         {
             "TEN_WORKOUTS",
             "🏋️ 10 Séances",
             "Atteindre 10 séances",
-            totalSeances,
+            nombreSeances,
             10
         },
         {
             "TWENTY_FIVE_WORKOUTS",
             "🔥 25 Séances",
             "Atteindre 25 séances",
-            totalSeances,
+            nombreSeances,
             25
         },
         {
