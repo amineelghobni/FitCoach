@@ -152,10 +152,14 @@ jobs:
             --object-directory build \
             --gcov-executable gcov \
             --exclude '.*tests/.*' \
+            --exclude '.*/build/.*' \
+            --exclude '.*/.*_autogen/.*' \
+            --exclude '.*/moc_.*' \
+            --exclude '.*\.moc$' \
             --print-summary \
             --xml-pretty \
             --xml coverage.xml \
-            --html-details coverage.html
+            --html-details coverage.html    
 
       # ------------------------------------------------------
       # Upload coverage reports
