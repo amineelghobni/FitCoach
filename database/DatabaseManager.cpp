@@ -185,12 +185,17 @@ QSqlQuery DatabaseManager::execQuery(const QString& sql) const
     return query;
 }
 
-// ← const ajouté ici
 QSqlQuery DatabaseManager::execQuery(const QString& sql,
                                      const QVariantList& params) const
 {
     QSqlQuery query(m_db);
-    query.prepare(sql);
+
+    if (!query.prepare(sql)) {
+        qDebug() << "❌ SQL Prepare Error:" << query.lastError().text();
+        qDebug() << "   Query:" << sql;
+        return query;
+    }
+
     for (const QVariant& param : params)
         query.addBindValue(param);
 
@@ -198,15 +203,22 @@ QSqlQuery DatabaseManager::execQuery(const QString& sql,
         qDebug() << "❌ SQL Error:" << query.lastError().text();
         qDebug() << "   Query:" << sql;
     }
+
     return query;
 }
 
 bool DatabaseManager::isFirstLaunch() const
 {
     QSqlQuery query(m_db);
-    query.exec("SELECT COUNT(*) FROM users");
+
+    if (!query.exec("SELECT COUNT(*) FROM users")) {
+        qDebug() << "❌ SQL Error:" << query.lastError().text();
+        return true;
+    }
+
     if (query.next())
         return query.value(0).toInt() == 0;
+
     return true;
 }
 

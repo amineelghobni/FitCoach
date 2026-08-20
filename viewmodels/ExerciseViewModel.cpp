@@ -136,7 +136,7 @@ WorkoutListModel*  ExerciseViewModel::workouts()  const { return m_workouts;  }
 ExerciseListModel* ExerciseViewModel::exercises() const { return m_exercises; }
 int  ExerciseViewModel::currentWorkoutId()        const { return m_currentWorkoutId; }
 bool ExerciseViewModel::nouveauPR()               const { return m_nouveauPR; }
-QString ExerciseViewModel::nomPR()                const { return m_nomPR; }
+const QString& ExerciseViewModel::nomPR() const {   return m_nomPR;  }
 double ExerciseViewModel::poidsPR()               const { return m_poidsPR; }
 
 void ExerciseViewModel::ajouterWorkout(const QString& nom)

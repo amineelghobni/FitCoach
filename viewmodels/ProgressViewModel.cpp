@@ -2,6 +2,7 @@
 #include "../database/DatabaseManager.h"
 #include <QDate>
 #include <QMap>
+#include <numeric>
 
 ProgressViewModel::ProgressViewModel(QObject* parent)
     : QObject(parent) {}
@@ -179,9 +180,14 @@ QVariantList ProgressViewModel::repartitionMusculaire() const
             volumeParCategorie[cat] = vol;
     }
 
-    double total = 0;
-    for (const QString& cat : categories)
-        total += volumeParCategorie[cat];
+    double total = std::accumulate(
+        categories.cbegin(),
+        categories.cend(),
+        0.0,
+        [&volumeParCategorie](double somme, const QString& cat) {
+            return somme + volumeParCategorie[cat];
+        }
+    );
 
     qDebug() << "TOTAL =" << total;
 

@@ -109,7 +109,7 @@ public:
     Q_PROPERTY(double poidsPR       READ poidsPR       NOTIFY prChanged)
 
     bool    nouveauPR() const;
-    QString nomPR()     const;
+    const QString& nomPR() const;
     double  poidsPR()   const;
 
     Q_INVOKABLE void resetPR();

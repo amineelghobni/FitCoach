@@ -31,7 +31,7 @@ public:
 
     void ajouterMessage(const QString& role, const QString& contenu);
     void clear();
-    QList<ChatMessage> messages() const;
+    const QList<ChatMessage>& messages() const;
 
 private:
     QList<ChatMessage> m_messages;
@@ -68,12 +68,12 @@ public:
 
     // Photo IA
     bool    analyzing()   const;
-    QString photoResult() const;
+    const QString& photoResult() const;
     int     photoCal()    const;
     double  photoProt()   const;
     double  photoGluc()   const;
     double  photoLip()    const;
-    QString photoNom()    const;
+    const QString& photoNom() const;
 
     Q_INVOKABLE void analyserPhoto(const QString& imagePath);
     Q_INVOKABLE void resetPhoto();

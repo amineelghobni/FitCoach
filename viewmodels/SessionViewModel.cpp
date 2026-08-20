@@ -1,5 +1,6 @@
 #include "SessionViewModel.h"
 #include "../database/DatabaseManager.h"
+#include <algorithm>
 
 
 SessionViewModel::SessionViewModel(QObject* parent)
@@ -35,13 +36,22 @@ int SessionViewModel::setsTotal() const {
     return 0;
 }
 
-int SessionViewModel::setsFaits() const {
+int SessionViewModel::setsFaits() const
+{
     if (m_exerciceIndex < m_exercices.size()) {
-        int count = 0;
-        for (bool b : m_exercices[m_exerciceIndex].seriesFaites)
-            if (b) count++;
-        return count;
+        const auto& series = m_exercices[m_exerciceIndex].seriesFaites;
+
+        return static_cast<int>(
+            std::count_if(
+                series.cbegin(),
+                series.cend(),
+                [](bool fait) {
+                    return fait;
+                }
+                )
+        );
     }
+
     return 0;
 }
 
@@ -113,9 +123,11 @@ void SessionViewModel::terminerSerie()
                 );
 
             // Démarre le timer de repos si pas la dernière série
-            bool toutFait = true;
-            for (bool b : ex.seriesFaites)
-                if (!b) { toutFait = false; break; }
+            const bool toutFait = !std::any_of(
+                ex.seriesFaites.cbegin(),
+                ex.seriesFaites.cend(),
+                [](bool fait) { return !fait; }
+            );
 
             if (!toutFait)
                 demarrerTimer();

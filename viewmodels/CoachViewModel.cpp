@@ -55,7 +55,7 @@ void ChatModel::clear() {
     endResetModel();
 }
 
-QList<ChatMessage> ChatModel::messages() const {
+const QList<ChatMessage>& ChatModel::messages() const {
     return m_messages;
 }
 
@@ -286,12 +286,12 @@ void CoachViewModel::clearChat()
 }
 
 bool    CoachViewModel::analyzing()   const { return m_analyzing;   }
-QString CoachViewModel::photoResult() const { return m_photoResult; }
+const QString& CoachViewModel::photoResult() const{ return m_photoResult;  }
 int     CoachViewModel::photoCal()    const { return m_photoCal;    }
 double  CoachViewModel::photoProt()   const { return m_photoProt;   }
 double  CoachViewModel::photoGluc()   const { return m_photoGluc;   }
 double  CoachViewModel::photoLip()    const { return m_photoLip;    }
-QString CoachViewModel::photoNom()    const { return m_photoNom;    }
+const QString& CoachViewModel::photoNom() const{  return m_photoNom;   }
 
 void CoachViewModel::resetPhoto() {
     m_photoResult = "";
@@ -359,12 +359,12 @@ Estime les quantités visuellement. Sois précis.
     userMessage["role"]    = "user";
     userMessage["content"] = contentArray;
 
-    QJsonArray messages;
-    messages.append(userMessage);
+    QJsonArray messagesArray;
+    messagesArray.append(userMessage);
 
     QJsonObject body;
     body["model"]      = "qwen/qwen3.6-27b";
-    body["messages"]   = messages;
+    body["messages"]   = messagesArray;
     body["max_tokens"] = 300;
 
     QString apiKey = GROQ_API_KEY;
