@@ -8,7 +8,12 @@ Item {
     Theme { id: theme }
 
     property bool showAddWorkout:     false
-    property bool showAddExercice:    false
+        property bool showAddExercice:    false
+
+    property bool showBadgeNotification: false
+    property int badgeNotificationCount: 0
+    property string badgeNotificationText: ""
+
     property bool showDeleteConfirm:  false
     property int  workoutToDelete:    -1
     property string workoutToDeleteName: ""
@@ -685,6 +690,87 @@ Item {
             }
 
             Item { height: 16 }
+        }
+        // ── Notification badge ─────────────────
+        Rectangle {
+            id: badgeNotification
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 18
+
+            width: Math.min(parent.width - 32, 360)
+            height: 58
+
+            radius: theme.radiusLG
+            color: theme.bgCard
+
+            border.color: "#FFD700"
+            border.width: 1
+
+            z: 100
+
+            visible: showBadgeNotification
+
+            opacity: showBadgeNotification ? 1 : 0
+            y: showBadgeNotification ? 0 : -20
+
+            Behavior on opacity {
+                NumberAnimation { duration: 220 }
+            }
+
+            Behavior on y {
+                NumberAnimation {
+                    duration: 220
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            Row {
+                anchors.fill: parent
+                anchors.margins: 12
+                spacing: 10
+
+                Text {
+                    text: "🏆"
+                    font.pixelSize: 24
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 2
+
+                    Text {
+                        text: badgeNotificationText
+                        color: theme.textPrimary
+                        font.pixelSize: 12
+                        font.bold: true
+                        elide: Text.ElideRight
+                        width: parent.width
+                    }
+
+                    Text {
+                        text: badgeNotificationCount === 1
+                              ? "Nouveau badge débloqué"
+                              : badgeNotificationCount + " nouveaux badges débloqués"
+
+                        color: theme.textSecondary
+                        font.pixelSize: 10
+                    }
+                }
+            }
+
+            Timer {
+                id: badgeNotificationTimer
+
+                interval: 3000
+                repeat: false
+
+                onTriggered: {
+                    showBadgeNotification = false
+                }
+            }
         }
 
         // ── Popup confirmation suppression ────
@@ -1383,16 +1469,33 @@ Item {
 
         Connections {
             target: exerciseVM
+
             function onSeanceTermineeChanged() {
                 if (exerciseVM.seanceTerminee) {
                     showCaloriesPopup = true
                     exerciseVM.setSeanceTerminee(false)
+
                     var cal = exerciseVM.dernieresCalories
+
                     coachVM.envoyerMessageAuto(
-                        "Je viens de terminer ma séance ! J'ai brûlé " + cal +
+                        "Je viens de terminer ma séance ! J'ai brûlé " +
+                        cal +
                         " kcal 💪 Donne-moi des conseils de récupération."
                     )
                 }
+            }
+
+            function onBadgesDebloques(badges) {
+                badgeNotificationCount = badges.length
+
+                if (badges.length === 1) {
+                    badgeNotificationText = badges[0].nom
+                } else {
+                    badgeNotificationText = "Nouveaux badges débloqués !"
+                }
+
+                showBadgeNotification = true
+                badgeNotificationTimer.restart()
             }
         }
     }

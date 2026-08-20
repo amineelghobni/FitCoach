@@ -220,3 +220,177 @@ void ProgressViewModel::ajouterPoids(double poids) {
 void ProgressViewModel::refresh() {
     emit dataChanged();
 }
+
+QVariantList ProgressViewModel::progressionBadges() const
+{
+    QVariantList result;
+
+    // Nombre total de séances
+    int nombreSeances = 0;
+
+    auto qSeances = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM workouts"
+        );
+
+    if (qSeances.next())
+        nombreSeances = qSeances.value(0).toInt();
+
+    // Nombre total de PR
+    int totalPR = 0;
+
+    auto qPR = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM personal_records"
+        );
+
+    if (qPR.next())
+        totalPR = qPR.value(0).toInt();
+
+    // Streak actuel basé sur les séances
+    int streak = 0;
+
+    auto qStreak = DatabaseManager::instance().execQuery(
+        "SELECT DISTINCT date FROM workouts ORDER BY date DESC"
+        );
+
+    QDate expected = QDate::currentDate();
+
+    while (qStreak.next()) {
+        const QDate date = QDate::fromString(
+            qStreak.value(0).toString(),
+            "yyyy-MM-dd"
+            );
+
+        if (date == expected) {
+            ++streak;
+            expected = expected.addDays(-1);
+        } else {
+            break;
+        }
+    }
+
+    struct BadgeProgress {
+        const char* code;
+        const char* nom;
+        const char* description;
+        int progression;
+        int objectif;
+    };
+
+    const QList<BadgeProgress> badgeList = {
+        {
+            "FIRST_WORKOUT",
+            "🥇 Première Séance",
+            "Créer ta première séance",
+            nombreSeances,
+            1
+        },
+        {
+            "FIVE_WORKOUTS",
+            "💪 Régulier",
+            "Atteindre 5 séances",
+            nombreSeances,
+            5
+        },
+        {
+            "TEN_WORKOUTS",
+            "🏋️ 10 Séances",
+            "Atteindre 10 séances",
+            nombreSeances,
+            10
+        },
+        {
+            "TWENTY_FIVE_WORKOUTS",
+            "🔥 25 Séances",
+            "Atteindre 25 séances",
+            nombreSeances,
+            25
+        },
+        {
+            "FIRST_PR",
+            "🏆 Premier Record",
+            "Obtenir ton premier record personnel",
+            totalPR,
+            1
+        },
+        {
+            "FIVE_PR",
+            "🏆 5 Records",
+            "Obtenir 5 records personnels",
+            totalPR,
+            5
+        },
+        {
+            "TEN_PR",
+            "🏆 10 Records",
+            "Obtenir 10 records personnels",
+            totalPR,
+            10
+        },
+        {
+            "STREAK_3",
+            "🔥 Streak 3 jours",
+            "T'entraîner 3 jours consécutifs",
+            streak,
+            3
+        },
+        {
+            "STREAK_7",
+            "🔥 Streak 7 jours",
+            "T'entraîner 7 jours consécutifs",
+            streak,
+            7
+        },
+        {
+            "STREAK_30",
+            "🔥 Streak 30 jours",
+            "T'entraîner 30 jours consécutifs",
+            streak,
+            30
+        }
+    };
+
+    for (const auto& badge : badgeList) {
+
+        auto q = DatabaseManager::instance().execQuery(
+            "SELECT date_obtention "
+            "FROM badges "
+            "WHERE code = ? "
+            "LIMIT 1",
+            { QString::fromUtf8(badge.code) }
+            );
+
+        const bool debloque = q.next();
+
+        QVariantMap item;
+
+        item["code"] = QString::fromUtf8(badge.code);
+        item["nom"] = QString::fromUtf8(badge.nom);
+        item["description"] = QString::fromUtf8(badge.description);
+
+        item["progression"] = qMin(
+            badge.progression,
+            badge.objectif
+            );
+
+        item["objectif"] = badge.objectif;
+
+        item["pourcentage"] = qMin(
+            100,
+            qRound(
+                static_cast<double>(badge.progression)
+                * 100.0
+                / badge.objectif
+                )
+            );
+
+        item["debloque"] = debloque;
+
+        item["date"] = debloque
+                           ? q.value(0).toString()
+                           : QString();
+
+        result.append(item);
+    }
+
+    return result;
+}

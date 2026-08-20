@@ -363,7 +363,8 @@ Item {
                         }
                     }
                 }
-                // ── Badges ────────────────────────────────
+
+                // ── Progression des badges ─────────────────────
                 Row {
                     Layout.fillWidth: true
                     Layout.leftMargin: 16
@@ -371,11 +372,24 @@ Item {
                     Layout.bottomMargin: 8
 
                     Text {
-                        text: "🥇 BADGES"
+                        text: "🏆 PROGRESSION"
                         color: theme.textHint
                         font.pixelSize: 10
                         font.bold: true
                         font.letterSpacing: 1
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    Text {
+                        text: progressVM.progressionBadges.filter(function(b) {
+                            return b.debloque
+                        }).length + " / " + progressVM.progressionBadges.length
+                        color: theme.accent
+                        font.pixelSize: 10
+                        font.bold: true
+                        anchors.verticalCenter: parent.verticalCenter
                     }
                 }
 
@@ -385,69 +399,139 @@ Item {
                     Layout.rightMargin: 16
                     Layout.bottomMargin: 16
 
-                    height: progressVM.badges.length > 0
-                            ? progressVM.badges.length * 58 + 16
-                            : 70
+                    height: Math.max(
+                        120,
+                        Math.ceil(progressVM.progressionBadges.length / 2) * 105 + 16
+                    )
 
                     radius: theme.radiusLG
                     color: theme.bgCard
                     border.color: theme.border
                     border.width: 1
 
-                    Column {
+                    GridLayout {
                         anchors.fill: parent
                         anchors.margins: 12
-                        spacing: 8
+                        columns: 2
+                        columnSpacing: 10
+                        rowSpacing: 10
 
                         Repeater {
-                            model: progressVM.badges
+                            model: progressVM.progressionBadges
 
                             Rectangle {
-                                width: parent.width
-                                height: 50
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 95
+
                                 radius: theme.radiusSM
-                                color: "#FFD70010"
-                                border.color: "#FFD70033"
+
+                                color: modelData.debloque
+                                       ? "#FFD70010"
+                                       : theme.bgInput
+
+                                border.color: modelData.debloque
+                                              ? "#FFD70055"
+                                              : theme.border
                                 border.width: 1
 
-                                Row {
+                                opacity: modelData.debloque ? 1.0 : 0.75
+
+                                Column {
                                     anchors.fill: parent
                                     anchors.margins: 10
-                                    spacing: 10
+                                    spacing: 5
 
-                                    Text {
-                                        text: "🏆"
-                                        font.pixelSize: 22
-                                        anchors.verticalCenter: parent.verticalCenter
+                                    Row {
+                                        width: parent.width
+                                        spacing: 6
+
+                                        Text {
+                                            text: modelData.debloque
+                                                  ? modelData.nom
+                                                  : "🔒 " + modelData.nom
+
+                                            color: modelData.debloque
+                                                   ? theme.textPrimary
+                                                   : theme.textSecondary
+
+                                            font.pixelSize: 11
+                                            font.bold: true
+
+                                            elide: Text.ElideRight
+                                            width: parent.width - 26
+                                        }
                                     }
 
-                                    Column {
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        spacing: 2
+                                    Text {
+                                        text: modelData.description
+                                        color: theme.textHint
+                                        font.pixelSize: 9
+
+                                        wrapMode: Text.WordWrap
+                                        width: parent.width
+                                        maximumLineCount: 2
+                                        elide: Text.ElideRight
+                                    }
+
+                                    Item {
+                                        width: parent.width
+                                        height: 8
+                                    }
+
+                                    Rectangle {
+                                        width: parent.width
+                                        height: 6
+                                        radius: 3
+                                        color: "#2a2a3a"
+
+                                        Rectangle {
+                                            width: parent.width *
+                                                   (modelData.pourcentage / 100.0)
+                                            height: parent.height
+                                            radius: 3
+
+                                            color: modelData.debloque
+                                                   ? "#FFD700"
+                                                   : theme.accent
+
+                                            Behavior on width {
+                                                NumberAnimation {
+                                                    duration: 500
+                                                    easing.type: Easing.OutCubic
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    Row {
+                                        width: parent.width
 
                                         Text {
-                                            text: modelData.nom
-                                            color: theme.textPrimary
-                                            font.pixelSize: 12
-                                            font.bold: true
+                                            text: modelData.progression +
+                                                  " / " +
+                                                  modelData.objectif
+
+                                            color: theme.textHint
+                                            font.pixelSize: 9
                                         }
 
+                                        Item { width: parent.width - 70 }
+
                                         Text {
-                                            text: modelData.description
-                                            color: theme.textHint
-                                            font.pixelSize: 10
+                                            text: modelData.debloque
+                                                  ? "✅"
+                                                  : modelData.pourcentage + "%"
+
+                                            color: modelData.debloque
+                                                   ? theme.accent
+                                                   : theme.textHint
+
+                                            font.pixelSize: 9
+                                            font.bold: true
                                         }
                                     }
                                 }
                             }
-                        }
-
-                        Text {
-                            visible: progressVM.badges.length === 0
-                            text: "Aucun badge débloqué pour le moment 🥇"
-                            color: theme.textHint
-                            font.pixelSize: theme.fontSM
-                            anchors.horizontalCenter: parent.horizontalCenter
                         }
                     }
                 }

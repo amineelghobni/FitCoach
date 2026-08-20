@@ -49,6 +49,12 @@ private slots:
     void streakExercices_trouDansLeStreak();
     void streakExercices_deuxWorkoutsMemeJour();
     void streakExercices_hierSeulement();
+    void badgePR_premierRecord();
+    void badgePR_cinqRecords();
+    void badgePR_dixRecords();
+    void badgeStreak_troisJours();
+    void badgeStreak_septJours();
+    void badgeStreak_trenteJours();
 };
 
 void TestExerciseViewModel::initTestCase()
@@ -996,6 +1002,188 @@ void TestExerciseViewModel::streakExercices_hierSeulement()
         );
 
     QCOMPARE(vm.streakExercices(), 0);
+}
+void TestExerciseViewModel::badgePR_premierRecord()
+{
+    ExerciseViewModel vm;
+
+    vm.ajouterWorkout("PR Test");
+
+    const int workoutId = vm.currentWorkoutId();
+    QVERIFY(workoutId > 0);
+
+    vm.ajouterExercice(
+        workoutId,
+        "Squat",
+        3,
+        10,
+        20.0
+        );
+
+    QVERIFY(vm.verifierEtSauvegarderPR(
+        workoutId,
+        "Squat",
+        10,
+        20.0
+        ));
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'FIRST_PR'"
+        );
+
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), 1);
+}
+void TestExerciseViewModel::badgePR_cinqRecords()
+{
+    ExerciseViewModel vm;
+
+    vm.ajouterWorkout("PR Test");
+
+    const int workoutId = vm.currentWorkoutId();
+    QVERIFY(workoutId > 0);
+
+    for (int i = 0; i < 5; ++i) {
+        const QString nom = "Test PR " + QString::number(i);
+
+        vm.ajouterExercice(
+            workoutId,
+            nom,
+            3,
+            10,
+            20.0
+            );
+
+        QVERIFY(vm.verifierEtSauvegarderPR(
+            workoutId,
+            nom,
+            10,
+            20.0
+            ));
+    }
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'FIVE_PR'"
+        );
+
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), 1);
+}
+void TestExerciseViewModel::badgePR_dixRecords()
+{
+    ExerciseViewModel vm;
+
+    vm.ajouterWorkout("PR Test");
+
+    const int workoutId = vm.currentWorkoutId();
+    QVERIFY(workoutId > 0);
+
+    for (int i = 0; i < 10; ++i) {
+        const QString nom = "Test PR " + QString::number(i);
+
+        vm.ajouterExercice(
+            workoutId,
+            nom,
+            3,
+            10,
+            20.0
+            );
+
+        QVERIFY(vm.verifierEtSauvegarderPR(
+            workoutId,
+            nom,
+            10,
+            20.0
+            ));
+    }
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'TEN_PR'"
+        );
+
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), 1);
+}
+void TestExerciseViewModel::badgeStreak_troisJours()
+{
+    ExerciseViewModel vm;
+
+    const QDate today = QDate::currentDate();
+
+    for (int i = 1; i <= 2; ++i) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO workouts (nom, date) VALUES (?, ?)",
+            {
+                "Workout jour " + QString::number(i),
+                today.addDays(-i).toString("yyyy-MM-dd")
+            }
+            );
+    }
+
+    vm.ajouterWorkout("Workout aujourd'hui");
+
+    QCOMPARE(vm.streakExercices(), 3);
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'STREAK_3'"
+        );
+
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), 1);
+}
+void TestExerciseViewModel::badgeStreak_septJours()
+{
+    ExerciseViewModel vm;
+
+    const QDate today = QDate::currentDate();
+
+    for (int i = 1; i <= 6; ++i) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO workouts (nom, date) VALUES (?, ?)",
+            {
+                "Workout jour " + QString::number(i),
+                today.addDays(-i).toString("yyyy-MM-dd")
+            }
+            );
+    }
+
+    vm.ajouterWorkout("Workout aujourd'hui");
+
+    QCOMPARE(vm.streakExercices(), 7);
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'STREAK_7'"
+        );
+
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), 1);
+}
+void TestExerciseViewModel::badgeStreak_trenteJours()
+{
+    ExerciseViewModel vm;
+
+    const QDate today = QDate::currentDate();
+
+    for (int i = 1; i <= 29; ++i) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO workouts (nom, date) VALUES (?, ?)",
+            {
+                "Workout jour " + QString::number(i),
+                today.addDays(-i).toString("yyyy-MM-dd")
+            }
+            );
+    }
+
+    vm.ajouterWorkout("Workout aujourd'hui");
+
+    QCOMPARE(vm.streakExercices(), 30);
+
+    auto q = DatabaseManager::instance().execQuery(
+        "SELECT COUNT(*) FROM badges WHERE code = 'STREAK_30'"
+        );
+
+    QVERIFY(q.next());
+    QCOMPARE(q.value(0).toInt(), 1);
 }
 
 QTEST_MAIN(TestExerciseViewModel)
