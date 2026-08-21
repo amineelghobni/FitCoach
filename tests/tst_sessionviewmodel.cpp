@@ -28,12 +28,16 @@ void TestSessionViewModel::initTestCase()
 void TestSessionViewModel::init()
 {
     DatabaseManager::instance().execQuery(
+        "DELETE FROM workout_sets"
+        );
+
+    DatabaseManager::instance().execQuery(
         "DELETE FROM workout_exercises"
-    );
+        );
 
     DatabaseManager::instance().execQuery(
         "DELETE FROM workouts"
-    );
+        );
 }
 
 void TestSessionViewModel::cleanupTestCase()
@@ -215,8 +219,10 @@ void TestSessionViewModel::historique_exercice_retourneDernierePerformance()
     SessionViewModel vm;
 
     const QDate today = QDate::currentDate();
-    const QString yesterday = today.addDays(-1).toString("yyyy-MM-dd");
+    const QString yesterday =
+        today.addDays(-1).toString("yyyy-MM-dd");
 
+    // ── Ancienne séance ─────────────────────────────
     DatabaseManager::instance().execQuery(
         "INSERT INTO workouts (nom, date) VALUES (?, ?)",
         { "Ancienne séance", yesterday }
@@ -228,7 +234,8 @@ void TestSessionViewModel::historique_exercice_retourneDernierePerformance()
 
     QVERIFY(qOldWorkout.next());
 
-    const int oldWorkoutId = qOldWorkout.value(0).toInt();
+    const int oldWorkoutId =
+        qOldWorkout.value(0).toInt();
 
     DatabaseManager::instance().execQuery(
         "INSERT INTO workout_exercises "
@@ -243,6 +250,34 @@ void TestSessionViewModel::historique_exercice_retourneDernierePerformance()
         }
         );
 
+    auto qOldExercise = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workout_exercises "
+        "WHERE workout_id = ? "
+        "LIMIT 1",
+        { oldWorkoutId }
+        );
+
+    QVERIFY(qOldExercise.next());
+
+    const int oldExerciseId =
+        qOldExercise.value(0).toInt();
+
+    // Les performances réellement réalisées
+    for (int serie = 1; serie <= 3; ++serie) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO workout_sets "
+            "(workout_exercise_id, numero_serie, poids, reps) "
+            "VALUES (?, ?, ?, ?)",
+            {
+                oldExerciseId,
+                serie,
+                95.0,
+                10
+            }
+            );
+    }
+
+    // ── Nouvelle séance ──────────────────────────────
     DatabaseManager::instance().execQuery(
         "INSERT INTO workouts (nom, date) VALUES (?, ?)",
         { "Nouvelle séance", today.toString("yyyy-MM-dd") }
@@ -254,7 +289,8 @@ void TestSessionViewModel::historique_exercice_retourneDernierePerformance()
 
     QVERIFY(qNewWorkout.next());
 
-    const int newWorkoutId = qNewWorkout.value(0).toInt();
+    const int newWorkoutId =
+        qNewWorkout.value(0).toInt();
 
     DatabaseManager::instance().execQuery(
         "INSERT INTO workout_exercises "
@@ -269,14 +305,15 @@ void TestSessionViewModel::historique_exercice_retourneDernierePerformance()
         }
         );
 
+    // ── Démarrage de la séance actuelle ─────────────
     vm.demarrerSession(newWorkoutId);
 
     QVERIFY(vm.actif());
     QVERIFY(vm.aHistorique());
 
-    QCOMPARE(vm.dernierSets(), 3);
-    QCOMPARE(vm.dernieresReps(), 10);
     QCOMPARE(vm.dernierPoids(), 95.0);
+    QCOMPARE(vm.dernieresReps(), 10);
+    QCOMPARE(vm.dernierSets(), 3);
 }
 void TestSessionViewModel::serie_terminee_est_enregistree()
 {

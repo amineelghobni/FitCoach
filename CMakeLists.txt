@@ -88,10 +88,11 @@ qt_add_executable(tst_exerciseviewmodel
     tests/tst_exerciseviewmodel.cpp
     viewmodels/ExerciseViewModel.cpp
     viewmodels/ExerciseViewModel.h
+    services/ExerciseService.cpp
+    services/ExerciseService.h
     database/DatabaseManager.cpp
     database/DatabaseManager.h
 )
-
 target_link_libraries(tst_exerciseviewmodel
     PRIVATE
         Qt6::Test

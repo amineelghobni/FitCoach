@@ -124,10 +124,12 @@ void WorkoutListModel::loadFromDb() {
 
 // ── ExerciseViewModel ─────────────────────────────────────
 
+
 ExerciseViewModel::ExerciseViewModel(QObject* parent)
     : QObject(parent)
     , m_workouts(new WorkoutListModel(this))
     , m_exercises(new ExerciseListModel(this))
+    , m_exerciseService(new ExerciseService(this))
 {
     m_workouts->loadFromDb();
 }
@@ -701,4 +703,29 @@ QVariantList ExerciseViewModel::verifierBadgesStreak()
     }
 
     return nouveauxBadges;
+}
+QVariantList ExerciseViewModel::historiqueExercice(
+    const QString& nomExercice,
+    int workoutId) const
+{
+    return m_exerciseService->historiqueExercice(
+        nomExercice,
+        workoutId
+        );
+}
+QVariantMap ExerciseViewModel::statistiquesExercice(
+    const QString& nomExercice) const
+{
+    return m_exerciseService->statistiquesExercice(nomExercice);
+}
+
+QVariantList ExerciseViewModel::progressionExercice(
+    const QString& nomExercice) const
+{
+    return m_exerciseService->progressionExercice(nomExercice);
+}
+QVariantMap ExerciseViewModel::suggestionProgression(
+    const QString& nomExercice) const
+{
+    return m_exerciseService->suggestionProgression(nomExercice);
 }

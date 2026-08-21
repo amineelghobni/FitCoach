@@ -55,6 +55,9 @@ private slots:
     void badgeStreak_troisJours();
     void badgeStreak_septJours();
     void badgeStreak_trenteJours();
+    void statistiquesExercice();
+    void progressionExercice();
+    void suggestionProgression();
 };
 
 void TestExerciseViewModel::initTestCase()
@@ -90,6 +93,9 @@ void TestExerciseViewModel::init()
 
     DatabaseManager::instance().execQuery(
         "DELETE FROM weight_history"
+        );
+    DatabaseManager::instance().execQuery(
+        "DELETE FROM workout_sets"
         );
 }
 
@@ -1184,6 +1190,194 @@ void TestExerciseViewModel::badgeStreak_trenteJours()
 
     QVERIFY(q.next());
     QCOMPARE(q.value(0).toInt(), 1);
+}
+
+void TestExerciseViewModel::statistiquesExercice()
+{
+    ExerciseViewModel vm;
+
+    const QString nom = "Squat";
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workouts (nom, date) VALUES (?, ?)",
+        { "Leg Day", QDate::currentDate().addDays(-1).toString("yyyy-MM-dd") }
+        );
+
+    auto qWorkout = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workouts ORDER BY id DESC LIMIT 1"
+        );
+
+    QVERIFY(qWorkout.next());
+    const int workoutId = qWorkout.value(0).toInt();
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_exercises "
+        "(workout_id, nom, sets, reps, poids) "
+        "VALUES (?, ?, 3, 10, 100)",
+        { workoutId, nom }
+        );
+
+    auto qExercise = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workout_exercises WHERE workout_id = ?",
+        { workoutId }
+        );
+
+    QVERIFY(qExercise.next());
+    const int exerciseId = qExercise.value(0).toInt();
+
+    for (int i = 1; i <= 3; ++i) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO workout_sets "
+            "(workout_exercise_id, numero_serie, poids, reps) "
+            "VALUES (?, ?, ?, ?)",
+            { exerciseId, i, 100.0, i == 2 ? 12 : 10 }
+            );
+    }
+
+    const QVariantMap stats = vm.statistiquesExercice(nom);
+
+    QCOMPARE(stats["nombreSeances"].toInt(), 1);
+    QCOMPARE(stats["meilleurPoids"].toDouble(), 100.0);
+    QCOMPARE(stats["meilleuresReps"].toInt(), 12);
+    QCOMPARE(stats["meilleurVolume"].toDouble(), 3200.0);
+}
+
+void TestExerciseViewModel::progressionExercice()
+{
+    ExerciseViewModel vm;
+
+    const QString nom = "Squat";
+
+    const QString date1 =
+        QDate::currentDate().addDays(-5).toString("yyyy-MM-dd");
+
+    const QString date2 =
+        QDate::currentDate().addDays(-2).toString("yyyy-MM-dd");
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workouts (nom, date) VALUES (?, ?)",
+        { "Leg 1", date1 }
+        );
+
+    auto q1 = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workouts ORDER BY id DESC LIMIT 1"
+        );
+
+    QVERIFY(q1.next());
+    const int workout1 = q1.value(0).toInt();
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_exercises "
+        "(workout_id, nom, sets, reps, poids) "
+        "VALUES (?, ?, 3, 10, 80)",
+        { workout1, nom }
+        );
+
+    auto qe1 = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workout_exercises WHERE workout_id = ?",
+        { workout1 }
+        );
+
+    QVERIFY(qe1.next());
+    const int exercise1 = qe1.value(0).toInt();
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_sets "
+        "(workout_exercise_id, numero_serie, poids, reps) "
+        "VALUES (?, 1, 80, 10)",
+        { exercise1 }
+        );
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workouts (nom, date) VALUES (?, ?)",
+        { "Leg 2", date2 }
+        );
+
+    auto q2 = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workouts ORDER BY id DESC LIMIT 1"
+        );
+
+    QVERIFY(q2.next());
+    const int workout2 = q2.value(0).toInt();
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_exercises "
+        "(workout_id, nom, sets, reps, poids) "
+        "VALUES (?, ?, 3, 10, 85)",
+        { workout2, nom }
+        );
+
+    auto qe2 = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workout_exercises WHERE workout_id = ?",
+        { workout2 }
+        );
+
+    QVERIFY(qe2.next());
+    const int exercise2 = qe2.value(0).toInt();
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_sets "
+        "(workout_exercise_id, numero_serie, poids, reps) "
+        "VALUES (?, 1, 85, 10)",
+        { exercise2 }
+        );
+
+    const QVariantList progression =
+        vm.progressionExercice(nom);
+
+    QCOMPARE(progression.size(), 2);
+    QCOMPARE(progression[0].toMap()["meilleurPoids"].toDouble(), 80.0);
+    QCOMPARE(progression[1].toMap()["meilleurPoids"].toDouble(), 85.0);
+}
+
+void TestExerciseViewModel::suggestionProgression()
+{
+    ExerciseViewModel vm;
+
+    const QString nom = "Squat";
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workouts (nom) VALUES (?)",
+        { "Leg Day" }
+        );
+
+    auto qWorkout = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workouts ORDER BY id DESC LIMIT 1"
+        );
+
+    QVERIFY(qWorkout.next());
+    const int workoutId = qWorkout.value(0).toInt();
+
+    DatabaseManager::instance().execQuery(
+        "INSERT INTO workout_exercises "
+        "(workout_id, nom, sets, reps, poids) "
+        "VALUES (?, ?, 3, 10, 100)",
+        { workoutId, nom }
+        );
+
+    auto qExercise = DatabaseManager::instance().execQuery(
+        "SELECT id FROM workout_exercises WHERE workout_id = ?",
+        { workoutId }
+        );
+
+    QVERIFY(qExercise.next());
+    const int exerciseId = qExercise.value(0).toInt();
+
+    for (int i = 1; i <= 3; ++i) {
+        DatabaseManager::instance().execQuery(
+            "INSERT INTO workout_sets "
+            "(workout_exercise_id, numero_serie, poids, reps) "
+            "VALUES (?, ?, 100, 10)",
+            { exerciseId, i }
+            );
+    }
+
+    const QVariantMap suggestion =
+        vm.suggestionProgression(nom);
+
+    QVERIFY(suggestion["disponible"].toBool());
+    QCOMPARE(suggestion["type"].toString(), QString("charge"));
+    QCOMPARE(suggestion["chargeProposee"].toDouble(), 105.0);
 }
 
 QTEST_MAIN(TestExerciseViewModel)

@@ -19,4 +19,14 @@ public:
         const QString& nomExercice,
         int workoutId
         ) const;
+    Q_INVOKABLE QVariantMap statistiquesExercice(
+        const QString& nomExercice
+        ) const;
+
+    Q_INVOKABLE QVariantList progressionExercice(
+        const QString& nomExercice
+        ) const;
+    Q_INVOKABLE QVariantMap suggestionProgression(
+        const QString& nomExercice
+        ) const;
 };

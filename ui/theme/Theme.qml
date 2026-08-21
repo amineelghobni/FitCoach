@@ -19,6 +19,10 @@ QtObject {
     readonly property color textHint:      "#445566"
     readonly property color border:        "#1e2a3a"
 
+    readonly property color gold:      "#FFC857"
+    readonly property color goldDark:  "#E0A030"
+    readonly property color goldGlow:  "#FFC85722"
+
     readonly property int fontXS:  10
     readonly property int fontSM:  12
     readonly property int fontMD:  14

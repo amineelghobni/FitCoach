@@ -282,8 +282,13 @@ Item {
                                 width: parent.width
                                 height: 54
                                 radius: theme.radiusSM
-                                color: "#FFD70008"
-                                border.color: "#FFD70022"
+
+                                gradient: Gradient {
+                                    orientation: Gradient.Horizontal
+                                    GradientStop { position: 0.0; color: "#FFC85718" }
+                                    GradientStop { position: 1.0; color: "#FFC85706" }
+                                }
+                                border.color: "#FFC85733"
                                 border.width: 1
 
                                 Row {
