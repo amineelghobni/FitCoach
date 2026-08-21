@@ -6,6 +6,8 @@ import FitCoach
 Item {
     Theme { id: theme }
 
+    property bool showHistorique: false
+
     signal fermer()
     signal seanceTerminee()
 
@@ -234,7 +236,142 @@ Item {
                             }
                         }
                     }
+                    // ── Dernière performance ─────────────────────
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: sessionVM.aHistorique ? 92 : 72
 
+                        radius: theme.radiusLG
+                        color: theme.bgCard
+                        border.color: theme.border
+                        border.width: 1
+
+                        visible: sessionVM.aHistorique
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.margins: 14
+                            spacing: 12
+
+                            Rectangle {
+                                width: 42
+                                height: 42
+                                radius: 12
+                                color: "#4FACFE18"
+                                border.color: "#4FACFE44"
+                                border.width: 1
+                                anchors.verticalCenter: parent.verticalCenter
+
+                                Text {
+                                    text: "📈"
+                                    font.pixelSize: 19
+                                    anchors.centerIn: parent
+                                }
+                            }
+
+                            Column {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+                                width: parent.width - 54
+
+                                Text {
+                                    text: "DERNIÈRE SÉANCE"
+                                    color: theme.textHint
+                                    font.pixelSize: 9
+                                    font.bold: true
+                                    font.letterSpacing: 1
+                                }
+
+                                Text {
+                                    text: sessionVM.dernierPoids + " kg × " +
+                                          sessionVM.dernieresReps + " reps × " +
+                                          sessionVM.dernierSets + " séries"
+
+                                    color: theme.textPrimary
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    elide: Text.ElideRight
+                                    width: parent.width
+                                }
+
+                                Text {
+                                    text: "Utilise cette performance comme référence"
+                                    color: theme.textSecondary
+                                    font.pixelSize: 10
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.alignment: Qt.AlignLeft
+                        width: 120
+                        height: 34
+                        radius: 17
+
+                        color: theme.bgCard
+                        border.color: theme.border
+                        border.width: 1
+
+                        visible: sessionVM.historiqueExercice.length > 0
+
+                        Row {
+                            anchors.centerIn: parent
+                            spacing: 6
+
+                            Text {
+                                text: "📊"
+                                font.pixelSize: 13
+                            }
+
+                            Text {
+                                text: "Historique"
+                                color: theme.textSecondary
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+
+                            onClicked: {
+                                showHistorique = true
+                            }
+                        }
+                    }
+
+                    // ── Comparaison avec la dernière séance ─────────────
+                    Row {
+                        Layout.fillWidth: true
+                        visible: sessionVM.aHistorique
+                        spacing: 6
+
+                        Text {
+                            text: {
+                                var delta = sessionVM.poids - sessionVM.dernierPoids
+
+                                if (Math.abs(delta) < 0.01)
+                                    return "🎯 Même charge programmée"
+
+                                if (delta > 0)
+                                    return "🎯 +" + delta.toFixed(1) +
+                                           " kg vs dernière séance"
+
+                                return "🎯 " + delta.toFixed(1) +
+                                       " kg vs dernière séance"
+                            }
+
+                            color: sessionVM.poids > sessionVM.dernierPoids
+                                   ? theme.accentGreen
+                                   : sessionVM.poids < sessionVM.dernierPoids
+                                     ? "#FF6B6B"
+                                     : theme.textSecondary
+
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
+                    }
                     // ── Séries ────────────────
                     Column {
                         Layout.fillWidth: true
@@ -831,4 +968,21 @@ Item {
     }
 
     property bool showAnnulerConfirm: false
+
+       // ── Page historique exercice ─────────────────────
+       ExerciseHistoryPage {
+           id: exerciseHistoryPage
+
+           anchors.fill: parent
+           z: 100
+
+           visible: showHistorique
+
+           exerciceNom: sessionVM.nomExercice
+           historique: sessionVM.historiqueExercice
+
+           onFermer: {
+               showHistorique = false
+           }
+       }
 }

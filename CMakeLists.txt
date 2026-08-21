@@ -32,6 +32,7 @@ qt_add_qml_module(appFitCoach
         ui/pages/SplashScreen.qml
         ui/pages/ProgrammePage.qml
         ui/pages/WorkoutSessionPage.qml
+        ui/pages/ExerciseHistoryPage.qml
     SOURCES
         database/DatabaseManager.h
         database/DatabaseManager.cpp
@@ -87,10 +88,11 @@ qt_add_executable(tst_exerciseviewmodel
     tests/tst_exerciseviewmodel.cpp
     viewmodels/ExerciseViewModel.cpp
     viewmodels/ExerciseViewModel.h
+    services/ExerciseService.cpp
+    services/ExerciseService.h
     database/DatabaseManager.cpp
     database/DatabaseManager.h
 )
-
 target_link_libraries(tst_exerciseviewmodel
     PRIVATE
         Qt6::Test
@@ -99,6 +101,52 @@ target_link_libraries(tst_exerciseviewmodel
 )
 
 add_test(NAME tst_exerciseviewmodel COMMAND tst_exerciseviewmodel)
+
+qt_add_executable(tst_sessionviewmodel
+    tests/tst_sessionviewmodel.cpp
+
+    viewmodels/SessionViewModel.cpp
+    viewmodels/SessionViewModel.h
+
+    services/ExerciseService.cpp
+    services/ExerciseService.h
+
+    database/DatabaseManager.cpp
+    database/DatabaseManager.h
+)
+
+target_link_libraries(tst_sessionviewmodel
+    PRIVATE
+        Qt6::Test
+        Qt6::Sql
+        Qt6::Core
+)
+
+add_test(
+    NAME tst_sessionviewmodel
+    COMMAND tst_sessionviewmodel
+)
+
+qt_add_executable(tst_exerciseservice
+    tests/tst_exerciseservice.cpp
+    services/ExerciseService.cpp
+    services/ExerciseService.h
+    database/DatabaseManager.cpp
+    database/DatabaseManager.h
+)
+
+target_link_libraries(tst_exerciseservice
+    PRIVATE
+        Qt6::Test
+        Qt6::Sql
+        Qt6::Core
+)
+
+add_test(
+    NAME tst_exerciseservice
+    COMMAND tst_exerciseservice
+)
+
 # ── Code Coverage ──────────────────────────────────────────
 option(ENABLE_COVERAGE "Enable code coverage" OFF)
 

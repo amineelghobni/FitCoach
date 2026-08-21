@@ -5,6 +5,7 @@
 #include <QList>
 #include <QVariantList>
 #include <QVariantMap>
+#include "../services/ExerciseService.h"
 
 // ─────────────────────────────────────────────────────────────
 // Exercise
@@ -266,6 +267,22 @@ public:
         double poids
         );
 
+    Q_INVOKABLE QVariantList historiqueExercice(
+        const QString& nomExercice,
+        int workoutId = -1
+        ) const;
+
+    Q_INVOKABLE QVariantMap statistiquesExercice(
+        const QString& nomExercice
+        ) const;
+
+    Q_INVOKABLE QVariantList progressionExercice(
+        const QString& nomExercice
+        ) const;
+    Q_INVOKABLE QVariantMap suggestionProgression(
+        const QString& nomExercice
+        ) const;
+
 signals:
     // ────────────────────────────────────────────────────────
     // General state
@@ -331,4 +348,6 @@ private:
     bool m_nouveauPR = false;
     QString m_nomPR;
     double m_poidsPR = 0.0;
+
+    ExerciseService* m_exerciseService = nullptr;
 };

@@ -83,6 +83,19 @@ void DatabaseManager::createTables()
     )");
 
     execQuery(R"(
+    CREATE TABLE IF NOT EXISTS workout_sets (
+        id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+        workout_exercise_id INTEGER NOT NULL
+                            REFERENCES workout_exercises(id),
+        numero_serie        INTEGER NOT NULL,
+        poids               REAL    DEFAULT 0,
+        reps                INTEGER DEFAULT 0,
+        date                TEXT    DEFAULT (date('now')),
+        created_at          TEXT    DEFAULT (datetime('now'))
+    )
+)");
+
+    execQuery(R"(
         CREATE TABLE IF NOT EXISTS weight_history (
             id    INTEGER PRIMARY KEY AUTOINCREMENT,
             poids REAL    NOT NULL,

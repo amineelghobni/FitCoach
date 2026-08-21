@@ -115,12 +115,17 @@ jobs:
           cmake --build build --target appFitCoach --parallel
 
       # ------------------------------------------------------
+      # ------------------------------------------------------
       # Build tests
       # ------------------------------------------------------
       - name: Build tests
         shell: bash
         run: |
-          cmake --build build --target tst_exerciseviewmodel --parallel
+          cmake --build build \
+            --target tst_exerciseviewmodel \
+            --target tst_sessionviewmodel \
+            --target tst_exerciseservice \
+            --parallel
 
       # ------------------------------------------------------
       # Run tests

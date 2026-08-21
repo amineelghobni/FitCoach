@@ -28,6 +28,9 @@ Item {
     property real   editExPoids:      0
     property bool showCaloriesPopup: false
     property int  caloriesBrulees:   0
+    property bool showHistorique: false
+    property string historiqueExerciceNom: ""
+    property var historiqueExerciceData: []
 
     signal ouvrirProgramme()
     signal seanceTerminee()
@@ -262,30 +265,6 @@ Item {
                                     color: theme.textHint
                                     font.pixelSize: 10
                                 }
-
-                                // Volume total
-                                Row {
-                                    spacing: 4
-                                    visible: exerciseVM.calculerVolume(workoutId) > 0
-
-                                    Text {
-                                        text: "📦"
-                                        font.pixelSize: 10
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-                                    Text {
-                                        text: {
-                                            var vol = exerciseVM.calculerVolume(workoutId)
-                                            if (vol >= 1000)
-                                                return (vol / 1000).toFixed(1) + " tonnes soulevées"
-                                            return vol + " kg soulevés"
-                                        }
-                                        color: "#4FACFE"
-                                        font.pixelSize: 10
-                                        font.bold: true
-                                        anchors.verticalCenter: parent.verticalCenter
-                                    }
-                                }
                             }
 
                             // Bouton ▶ Début OU badge ✅
@@ -493,7 +472,7 @@ Item {
                                     Column {
                                         anchors.verticalCenter: parent.verticalCenter
                                         spacing: 2
-                                        width: parent.width - 24 - 60 - 50 - 30
+                                        width: parent.width - 210
 
                                         Text {
                                             text: nom
@@ -523,6 +502,39 @@ Item {
                                             font.pixelSize: 10
                                             font.bold: true
                                             anchors.centerIn: parent
+                                        }
+                                    }
+
+                                    // ── Historique exercice ─────────────
+                                    Rectangle {
+                                        width: 26
+                                        height: 26
+                                        radius: 6
+                                        color: "#4FACFE18"
+                                        border.color: "#4FACFE44"
+                                        border.width: 1
+                                        anchors.verticalCenter: parent.verticalCenter
+
+                                        Text {
+                                            text: "📊"
+                                            font.pixelSize: 11
+                                            anchors.centerIn: parent
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+
+                                            onClicked: {
+                                                historiqueExerciceNom = nom
+
+                                                historiqueExerciceData =
+                                                    exerciseVM.historiqueExercice(
+                                                        nom,
+                                                        workoutId
+                                                    )
+
+                                                showHistorique = true
+                                            }
                                         }
                                     }
 
@@ -1122,6 +1134,7 @@ Item {
             }
         }
 
+
         // ── Popup modifier exercice ───────────
         Rectangle {
             anchors.fill: parent
@@ -1496,6 +1509,21 @@ Item {
 
                 showBadgeNotification = true
                 badgeNotificationTimer.restart()
+            }
+        }
+        ExerciseHistoryPage {
+            id: exerciseHistoryPage
+
+            anchors.fill: parent
+            z: 100
+
+            visible: showHistorique
+
+            exerciceNom: historiqueExerciceNom
+            historique: historiqueExerciceData
+
+            onFermer: {
+                showHistorique = false
             }
         }
     }
